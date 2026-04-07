@@ -12,6 +12,8 @@ data class UsuarioEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val usuario: String,
     val nombreMostrar: String,
+    /** URI de imagen de galería (`content://`); null si usa avatar emoji por defecto. */
+    val avatarUri: String? = null,
     val hashContrasena: String,
     val sal: String,
     val puntajeTotal: Int = 0,

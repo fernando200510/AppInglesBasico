@@ -24,6 +24,7 @@ class UsuarioRepository(
         val entidad = UsuarioEntity(
             usuario = u,
             nombreMostrar = nombreMostrar.trim().ifEmpty { u },
+            avatarUri = null,
             hashContrasena = hash,
             sal = sal
         )
@@ -60,6 +61,12 @@ class UsuarioRepository(
             )
         }
         dao.actualizar(actualizado)
+        return Result.success(Unit)
+    }
+
+    suspend fun actualizarAvatarUri(id: Long, uri: String?): Result<Unit> {
+        val actual = dao.obtenerPorId(id) ?: return Result.failure(IllegalStateException("Usuario no encontrado"))
+        dao.actualizar(actual.copy(avatarUri = uri))
         return Result.success(Unit)
     }
 

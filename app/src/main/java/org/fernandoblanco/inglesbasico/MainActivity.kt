@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            InglesBasicoTheme {
+            InglesBasicoTheme(dynamicColor = false) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     InglesAppRoot()
                 }
