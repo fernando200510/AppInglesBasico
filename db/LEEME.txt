@@ -1,0 +1,7 @@
+Carpeta del proyecto para la base de datos SQLite.
+
+- En la app, la conexion real esta en:
+  app/src/main/java/org/fernandoblanco/inglesbasico/db/
+  (Room crea el archivo ingles_basico.db en el almacen interno del dispositivo).
+
+- Puedes anadir aqui scripts .sql de referencia o diagramas si los necesitas para la materia.
