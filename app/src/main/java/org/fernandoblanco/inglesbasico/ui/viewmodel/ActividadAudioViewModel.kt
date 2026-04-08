@@ -43,6 +43,9 @@ class ActividadAudioViewModel(
     private val _indice = MutableStateFlow(0)
     val indice: StateFlow<Int> = _indice.asStateFlow()
 
+    private val _preguntaVisible = MutableStateFlow<PreguntaAudio?>(null)
+    val preguntaVisible: StateFlow<PreguntaAudio?> = _preguntaVisible.asStateFlow()
+
     private val _aciertosSesion = MutableStateFlow(0)
     val aciertosSesion: StateFlow<Int> = _aciertosSesion.asStateFlow()
 
@@ -54,6 +57,9 @@ class ActividadAudioViewModel(
 
     private val _feedbackOk = MutableStateFlow<Boolean?>(null)
     val feedbackOk: StateFlow<Boolean?> = _feedbackOk.asStateFlow()
+
+    private val _solucionCorrecta = MutableStateFlow<String?>(null)
+    val solucionCorrecta: StateFlow<String?> = _solucionCorrecta.asStateFlow()
 
     private val _procesando = MutableStateFlow(false)
     val procesando: StateFlow<Boolean> = _procesando.asStateFlow()
@@ -71,26 +77,27 @@ class ActividadAudioViewModel(
         reiniciar()
     }
 
-    val preguntaActual: PreguntaAudio?
-        get() {
-            if (_finSesion.value != null) return null
-            return preguntasSesion.getOrNull(_indice.value)
+    private fun sincronizarPreguntaVisible() {
+        _preguntaVisible.value = when {
+            _finSesion.value != null -> null
+            else -> preguntasSesion.getOrNull(_indice.value)
         }
+    }
 
     fun reproducir() {
-        val p = preguntaActual ?: return
+        val p = _preguntaVisible.value ?: return
         tts?.speak(p.palabraIngles, TextToSpeech.QUEUE_FLUSH, null, "ingles_${p.palabraIngles}")
     }
 
     fun limpiarFeedback() {
         _feedback.value = null
         _feedbackOk.value = null
+        _solucionCorrecta.value = null
     }
 
     fun reiniciar() {
-        val barajado = pool.shuffled()
-        val elegidas = barajado.take(PREGUNTAS_POR_SESION)
-        preguntasSesion = elegidas.map { item ->
+        val base = pool.shuffled().distinctBy { it.enKey.lowercase() }.take(PREGUNTAS_POR_SESION)
+        preguntasSesion = base.map { item ->
             val opciones = VocabularyBank.randomOptions(item, pool, 4)
             PreguntaAudio(palabraIngles = item.en, opcionesIngles = opciones)
         }
@@ -99,37 +106,43 @@ class ActividadAudioViewModel(
         _finSesion.value = null
         _feedback.value = null
         _feedbackOk.value = null
+        _solucionCorrecta.value = null
         _procesando.value = false
+        sincronizarPreguntaVisible()
     }
 
     fun responder(inglesElegido: String) {
         if (_finSesion.value != null || _procesando.value) return
-        val p = preguntaActual ?: return
+        val idx = _indice.value
+        val pregunta = preguntasSesion.getOrNull(idx) ?: return
+        _procesando.value = true
         viewModelScope.launch {
-            _procesando.value = true
-            val id = sesionUsuario.usuarioIdActivo ?: run {
+            val id = sesionUsuario.usuarioIdActivo
+            if (id == null) {
                 _procesando.value = false
                 return@launch
             }
-            val ok = inglesElegido.equals(p.palabraIngles, ignoreCase = true)
+            val ok = inglesElegido.equals(pregunta.palabraIngles, ignoreCase = true)
             _sonido.tryEmit(ok)
             repositorio.registrarResultadoActividad(
                 id,
                 UsuarioRepository.TipoActividad.AUDIO,
                 ok
             )
-            _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
             _feedbackOk.value = ok
+            _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
+            _solucionCorrecta.value = if (ok) null else pregunta.palabraIngles
             if (ok) _aciertosSesion.value = _aciertosSesion.value + 1
-            delay(750)
+            delay(950)
             _feedback.value = null
             _feedbackOk.value = null
-            val ultima = _indice.value >= PREGUNTAS_POR_SESION - 1
-            if (ultima) {
+            _solucionCorrecta.value = null
+            if (idx >= PREGUNTAS_POR_SESION - 1) {
                 _finSesion.value = _aciertosSesion.value to PREGUNTAS_POR_SESION
             } else {
-                _indice.value = _indice.value + 1
+                _indice.value = idx + 1
             }
+            sincronizarPreguntaVisible()
             _procesando.value = false
         }
     }
@@ -143,8 +156,8 @@ class ActividadAudioViewModel(
     ).random()
 
     private fun mensajeIncorrecto(): String = listOf(
-        "Escucha otra vez…",
-        "¡Casi! Pulsa Escuchar",
+        "¡Escucha otra vez!",
+        "¡Casi!",
         "Prueba otra opción",
         "¡Tú puedes!"
     ).random()

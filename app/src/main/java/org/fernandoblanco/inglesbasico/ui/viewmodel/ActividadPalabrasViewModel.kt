@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
 import org.fernandoblanco.inglesbasico.data.UsuarioRepository
 import org.fernandoblanco.inglesbasico.data.VocabularyBank
+import org.fernandoblanco.inglesbasico.data.VocabItem
 
 data class PreguntaPalabra(
     val incompleta: String,
@@ -27,6 +28,7 @@ class ActividadPalabrasViewModel(
 
     companion object {
         const val PREGUNTAS_POR_SESION = 10
+        private const val OPCIONES = 4
     }
 
     private val pool = VocabularyBank.items.filter { it.en.any { ch -> ch.isLetter() } && it.en.length >= 4 }
@@ -35,6 +37,9 @@ class ActividadPalabrasViewModel(
 
     private val _indice = MutableStateFlow(0)
     val indice: StateFlow<Int> = _indice.asStateFlow()
+
+    private val _preguntaVisible = MutableStateFlow<PreguntaPalabra?>(null)
+    val preguntaVisible: StateFlow<PreguntaPalabra?> = _preguntaVisible.asStateFlow()
 
     private val _aciertosSesion = MutableStateFlow(0)
     val aciertosSesion: StateFlow<Int> = _aciertosSesion.asStateFlow()
@@ -48,6 +53,9 @@ class ActividadPalabrasViewModel(
     private val _feedbackOk = MutableStateFlow<Boolean?>(null)
     val feedbackOk: StateFlow<Boolean?> = _feedbackOk.asStateFlow()
 
+    private val _solucionCorrecta = MutableStateFlow<String?>(null)
+    val solucionCorrecta: StateFlow<String?> = _solucionCorrecta.asStateFlow()
+
     private val _procesando = MutableStateFlow(false)
     val procesando: StateFlow<Boolean> = _procesando.asStateFlow()
 
@@ -58,28 +66,54 @@ class ActividadPalabrasViewModel(
         reiniciar()
     }
 
-    val preguntaActual: PreguntaPalabra?
-        get() {
-            if (_finSesion.value != null) return null
-            return preguntasSesion.getOrNull(_indice.value)
+    private fun sincronizarPreguntaVisible() {
+        _preguntaVisible.value = when {
+            _finSesion.value != null -> null
+            else -> preguntasSesion.getOrNull(_indice.value)
         }
+    }
+
+    private fun cuatroOpcionesUnicas(correctaUpper: String, itemCorrecto: VocabItem): List<String> {
+        val vistos = mutableSetOf(correctaUpper.lowercase())
+        val out = mutableListOf(correctaUpper)
+        val distractores = pool
+            .filter { !it.enKey.equals(itemCorrecto.enKey, ignoreCase = true) }
+            .map { VocabularyBank.enmascarar(it.en).second }
+            .distinctBy { it.lowercase() }
+            .shuffled()
+        for (d in distractores) {
+            if (out.size >= OPCIONES) break
+            val k = d.lowercase()
+            if (k !in vistos) {
+                vistos.add(k)
+                out.add(d)
+            }
+        }
+        if (out.size < OPCIONES) {
+            for (it in pool.shuffled()) {
+                if (out.size >= OPCIONES) break
+                val d = VocabularyBank.enmascarar(it.en).second
+                val k = d.lowercase()
+                if (k !in vistos) {
+                    vistos.add(k)
+                    out.add(d)
+                }
+            }
+        }
+        return out.shuffled()
+    }
 
     fun limpiarFeedback() {
         _feedback.value = null
         _feedbackOk.value = null
+        _solucionCorrecta.value = null
     }
 
     fun reiniciar() {
-        val barajado = pool.shuffled()
-        val elegidas = barajado.take(PREGUNTAS_POR_SESION)
-        preguntasSesion = elegidas.map { item ->
+        val base = pool.shuffled().distinctBy { it.enKey.lowercase() }.take(PREGUNTAS_POR_SESION)
+        preguntasSesion = base.map { item: VocabItem ->
             val (mask, full) = VocabularyBank.enmascarar(item.en)
-            val wrong = pool
-                .filter { it.en.uppercase() != full }
-                .shuffled()
-                .take(3)
-                .map { VocabularyBank.enmascarar(it.en).second }
-            val opciones = (wrong + full).distinct().shuffled()
+            val opciones = cuatroOpcionesUnicas(full, item)
             PreguntaPalabra(incompleta = mask, correcta = full, opciones = opciones)
         }
         _indice.value = 0
@@ -87,37 +121,43 @@ class ActividadPalabrasViewModel(
         _finSesion.value = null
         _feedback.value = null
         _feedbackOk.value = null
+        _solucionCorrecta.value = null
         _procesando.value = false
+        sincronizarPreguntaVisible()
     }
 
     fun responder(palabra: String) {
         if (_finSesion.value != null || _procesando.value) return
-        val p = preguntaActual ?: return
+        val idx = _indice.value
+        val pregunta = preguntasSesion.getOrNull(idx) ?: return
+        _procesando.value = true
         viewModelScope.launch {
-            _procesando.value = true
-            val id = sesionUsuario.usuarioIdActivo ?: run {
+            val id = sesionUsuario.usuarioIdActivo
+            if (id == null) {
                 _procesando.value = false
                 return@launch
             }
-            val ok = palabra.equals(p.correcta, ignoreCase = true)
+            val ok = palabra.equals(pregunta.correcta, ignoreCase = true)
             _sonido.tryEmit(ok)
             repositorio.registrarResultadoActividad(
                 id,
                 UsuarioRepository.TipoActividad.PALABRAS,
                 ok
             )
-            _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
             _feedbackOk.value = ok
+            _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
+            _solucionCorrecta.value = if (ok) null else pregunta.correcta
             if (ok) _aciertosSesion.value = _aciertosSesion.value + 1
-            delay(750)
+            delay(950)
             _feedback.value = null
             _feedbackOk.value = null
-            val ultima = _indice.value >= PREGUNTAS_POR_SESION - 1
-            if (ultima) {
+            _solucionCorrecta.value = null
+            if (idx >= PREGUNTAS_POR_SESION - 1) {
                 _finSesion.value = _aciertosSesion.value to PREGUNTAS_POR_SESION
             } else {
-                _indice.value = _indice.value + 1
+                _indice.value = idx + 1
             }
+            sincronizarPreguntaVisible()
             _procesando.value = false
         }
     }
@@ -131,8 +171,8 @@ class ActividadPalabrasViewModel(
     ).random()
 
     private fun mensajeIncorrecto(): String = listOf(
-        "Prueba otra letra…",
-        "¡Casi! Otra opción",
+        "¡Casi!",
+        "Prueba otra opción",
         "¡Ánimo!",
         "Sigue intentando"
     ).random()

@@ -1,16 +1,25 @@
-﻿package org.fernandoblanco.inglesbasico.ui
+package org.fernandoblanco.inglesbasico.ui
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,18 +32,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -46,13 +50,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -69,21 +81,31 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.launch
 import org.fernandoblanco.inglesbasico.InglesApp
+import org.fernandoblanco.inglesbasico.ui.design.LoginEntrance
+import org.fernandoblanco.inglesbasico.ui.design.PlayOutlineButton
+import org.fernandoblanco.inglesbasico.ui.design.PlayScreenGradient
+import org.fernandoblanco.inglesbasico.ui.design.PlaySolidButton
+import org.fernandoblanco.inglesbasico.ui.design.playTextFieldColors
 import org.fernandoblanco.inglesbasico.db.entity.UsuarioEntity
 import org.fernandoblanco.inglesbasico.ui.kid.KidFeedback
-import org.fernandoblanco.inglesbasico.ui.kid.KidFeedbackBanner
+import org.fernandoblanco.inglesbasico.ui.kid.GameFeedbackBlock
+import org.fernandoblanco.inglesbasico.ui.kid.GamePlayContentCard
 import org.fernandoblanco.inglesbasico.ui.kid.KidFinSesion
 import org.fernandoblanco.inglesbasico.ui.kid.KidGameBackground
 import org.fernandoblanco.inglesbasico.ui.kid.KidListenButton
 import org.fernandoblanco.inglesbasico.ui.kid.KidOptionButton
 import org.fernandoblanco.inglesbasico.ui.kid.KidSessionProgress
 import org.fernandoblanco.inglesbasico.ui.kid.avatarEmojiParaUsuario
-import org.fernandoblanco.inglesbasico.ui.theme.KidCoral
-import org.fernandoblanco.inglesbasico.ui.theme.KidMint
-import org.fernandoblanco.inglesbasico.ui.theme.KidPurple
-import org.fernandoblanco.inglesbasico.ui.theme.KidSky
-import org.fernandoblanco.inglesbasico.ui.theme.KidSun
-import org.fernandoblanco.inglesbasico.ui.theme.KidTurquoise
+import org.fernandoblanco.inglesbasico.ui.theme.PlayBlue
+import org.fernandoblanco.inglesbasico.ui.theme.PlayBlueDark
+import org.fernandoblanco.inglesbasico.ui.theme.PlayError
+import org.fernandoblanco.inglesbasico.ui.theme.PlayGreen
+import org.fernandoblanco.inglesbasico.ui.theme.PlayInk
+import org.fernandoblanco.inglesbasico.ui.theme.PlayPurple
+import org.fernandoblanco.inglesbasico.ui.theme.PlayPurpleSoft
+import org.fernandoblanco.inglesbasico.ui.theme.PlaySurface
+import org.fernandoblanco.inglesbasico.ui.theme.PlayYellow
+import org.fernandoblanco.inglesbasico.ui.theme.PlayYellowSoft
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadAudioViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadImagenViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadPalabrasViewModel
@@ -109,7 +131,18 @@ fun InglesAppRoot() {
     val app = LocalContext.current.applicationContext as InglesApp
     val factory = remember(app) { InglesViewModelFactory(app) }
     val nav = rememberNavController()
-    NavHost(navController = nav, startDestination = Rutas.SPLASH) {
+    NavHost(
+        navController = nav,
+        startDestination = Rutas.SPLASH,
+        enterTransition = {
+            fadeIn(tween(300)) + slideInHorizontally(tween(300)) { w -> w / 14 }
+        },
+        exitTransition = { fadeOut(tween(220)) },
+        popEnterTransition = { fadeIn(tween(280)) },
+        popExitTransition = {
+            fadeOut(tween(220)) + slideOutHorizontally(tween(280)) { w -> w / 14 }
+        }
+    ) {
         composable(Rutas.SPLASH) {
             PantallaSplash(app = app, nav = nav)
         }
@@ -167,10 +200,11 @@ private fun PantallaSplash(app: InglesApp, nav: NavHostController) {
             Text(
                 "Inglés Divertido",
                 style = MaterialTheme.typography.headlineMedium,
-                color = KidPurple
+                color = PlayPurple,
+                fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(20.dp))
-            CircularProgressIndicator(color = KidTurquoise)
+            CircularProgressIndicator(color = PlayBlue, strokeWidth = 3.dp)
         }
     }
 }
@@ -197,78 +231,85 @@ private fun PantallaLogin(factory: InglesViewModelFactory, nav: NavHostControlle
         snackbarHost = { SnackbarHost(snack) },
         containerColor = Color.Transparent
     ) { pad ->
-        KidGameBackground {
-            Column(
-                modifier = Modifier
-                    .padding(pad)
-                    .padding(24.dp)
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Box(
+                Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(pad)
             ) {
-                Spacer(Modifier.height(24.dp))
-                Text("🌟", style = MaterialTheme.typography.displayMedium)
-                Text(
-                    "¡Hola de nuevo!",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = KidPurple,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    "Escribe tu usuario y contraseña para entrar al menú.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-                OutlinedTextField(
-                    value = usuario,
-                    onValueChange = { usuario = it },
-                    label = { Text("Usuario") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp)
-                )
-                OutlinedTextField(
-                    value = contrasena,
-                    onValueChange = { contrasena = it },
-                    label = { Text("Contraseña") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                Button(
-                    onClick = {
-                        vm.iniciarSesion(usuario, contrasena) {
-                            nav.navigate(Rutas.INICIO) {
-                                popUpTo(Rutas.LOGIN) { inclusive = true }
-                            }
+                LoginEntrance {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp, vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(18.dp)
+                    ) {
+                        Spacer(Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .shadow(16.dp, CircleShape, spotColor = PlayBlue.copy(0.25f))
+                                .clip(CircleShape)
+                                .background(PlaySurface),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("🦊", style = MaterialTheme.typography.displayLarge)
                         }
-                    },
-                    enabled = !cargando,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = KidTurquoise)
-                ) {
-                    if (cargando) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(28.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
+                        Text(
+                            "¡Hola, pequeño explorador!",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = PlayInk,
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Bold
                         )
-                    } else {
-                        Text("Entrar al juego", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Entra para seguir aprendiendo inglés",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = PlayInk.copy(alpha = 0.72f),
+                            textAlign = TextAlign.Center
+                        )
+                        OutlinedTextField(
+                            value = usuario,
+                            onValueChange = { usuario = it },
+                            label = { Text("Tu usuario") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(22.dp),
+                            colors = playTextFieldColors()
+                        )
+                        OutlinedTextField(
+                            value = contrasena,
+                            onValueChange = { contrasena = it },
+                            label = { Text("Contraseña") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = playTextFieldColors()
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        PlaySolidButton(
+                            text = "Entrar",
+                            onClick = {
+                                vm.iniciarSesion(usuario, contrasena) {
+                                    nav.navigate(Rutas.INICIO) {
+                                        popUpTo(Rutas.LOGIN) { inclusive = true }
+                                    }
+                                }
+                            },
+                            enabled = !cargando,
+                            loading = cargando,
+                            containerColor = PlayBlue
+                        )
+                        PlayOutlineButton(
+                            text = "Crear cuenta nueva",
+                            onClick = { nav.navigate(Rutas.REGISTRO) },
+                            borderColor = PlayPurple
+                        )
                     }
                 }
-                OutlinedButton(
-                    onClick = { nav.navigate(Rutas.REGISTRO) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(20.dp)
-                ) { Text("Crear perfil nuevo") }
             }
         }
     }
@@ -295,78 +336,83 @@ private fun PantallaRegistro(factory: InglesViewModelFactory, nav: NavHostContro
 
     Scaffold(
         snackbarHost = { SnackbarHost(snack) },
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Crear perfil") },
+                title = {
+                    Text(
+                        "Nueva cuenta",
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidSun.copy(alpha = 0.35f)
+                    containerColor = Color.Transparent
                 )
             )
         }
     ) { pad ->
-        Column(
-            modifier = Modifier
-                .padding(pad)
-                .padding(24.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Text(
-                "¡Elige un usuario y contraseña para guardar tu progreso!",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            OutlinedTextField(
-                value = usuario,
-                onValueChange = { usuario = it },
-                label = { Text("Usuario (único)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp)
-            )
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
-                label = { Text("Tu nombre") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp)
-            )
-            OutlinedTextField(
-                value = contrasena,
-                onValueChange = { contrasena = it },
-                label = { Text("Contraseña (mín. 4)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                shape = RoundedCornerShape(16.dp)
-            )
-            Button(
-                onClick = {
-                    vm.registrar(usuario, nombre, contrasena) {
-                        nav.navigate(Rutas.INICIO) {
-                            popUpTo(Rutas.LOGIN) { inclusive = true }
-                        }
-                    }
-                },
-                enabled = !cargando,
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = KidPurple)
+                    .padding(pad)
+                    .padding(24.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (cargando) CircularProgressIndicator(
-                    modifier = Modifier.size(26.dp),
-                    color = Color.White,
-                    strokeWidth = 2.dp
+                Text(
+                    "Crea tu usuario y empieza la aventura",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = PlayInk.copy(alpha = 0.8f)
                 )
-                else Text("¡Guardar y jugar!", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = usuario,
+                    onValueChange = { usuario = it },
+                    label = { Text("Usuario (único)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(22.dp),
+                    colors = playTextFieldColors()
+                )
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Cómo te llamamos") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(22.dp),
+                    colors = playTextFieldColors()
+                )
+                OutlinedTextField(
+                    value = contrasena,
+                    onValueChange = { contrasena = it },
+                    label = { Text("Contraseña (mín. 4)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = playTextFieldColors()
+                )
+                Spacer(Modifier.height(8.dp))
+                PlaySolidButton(
+                    text = "¡Listo, a jugar!",
+                    onClick = {
+                        vm.registrar(usuario, nombre, contrasena) {
+                            nav.navigate(Rutas.INICIO) {
+                                popUpTo(Rutas.LOGIN) { inclusive = true }
+                            }
+                        }
+                    },
+                    enabled = !cargando,
+                    loading = cargando,
+                    containerColor = PlayPurple
+                )
             }
         }
     }
@@ -392,12 +438,14 @@ private fun PantallaInicio(
                     Column {
                         Text(
                             "¡Hola${perfil?.nombreMostrar?.let { ", $it" } ?: ""}!",
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = PlayInk
                         )
                         Text(
-                            "Elige qué quieres hacer hoy",
+                            "¿Qué hacemos hoy?",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                            color = PlayInk.copy(alpha = 0.65f)
                         )
                     }
                 },
@@ -413,45 +461,51 @@ private fun PantallaInicio(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidMint.copy(alpha = 0.6f)
+                    containerColor = PlaySurface.copy(alpha = 0.92f),
+                    titleContentColor = PlayInk,
+                    actionIconContentColor = PlayInk
                 )
             )
         }
     ) { pad ->
-        KidGameBackground {
+        PlayScreenGradient(Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .padding(pad)
                     .padding(horizontal = 20.dp, vertical = 16.dp)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                TarjetaMenuKid(
+                PlayNavCard(
                     emoji = "🎮",
                     titulo = "Actividades",
-                    subtitulo = "Imagen, audio y palabras",
-                    fondo = KidSun.copy(alpha = 0.45f),
+                    subtitulo = "Imagen, audio y palabras — 10 preguntas",
+                    accentStart = PlayBlue,
+                    accentEnd = PlayPurple,
+                    nivel = null,
                     onClick = { nav.navigate(Rutas.ACTIVIDADES) }
                 )
-                TarjetaMenuKid(
+                PlayNavCard(
                     emoji = "📊",
                     titulo = "Reportes",
-                    subtitulo = "Tu progreso y retos",
-                    fondo = KidSky.copy(alpha = 0.35f),
+                    subtitulo = "Tu progreso y logros",
+                    accentStart = PlayYellow,
+                    accentEnd = PlayGreen,
+                    nivel = null,
                     onClick = { nav.navigate(Rutas.REPORTES) }
                 )
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(
+                Spacer(Modifier.height(4.dp))
+                PlayOutlineButton(
+                    text = "Cerrar sesión",
                     onClick = {
                         app.sesion.cerrarSesion()
                         nav.navigate(Rutas.LOGIN) {
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp)
-                ) { Text("Salir") }
+                    borderColor = PlayInk.copy(alpha = 0.35f)
+                )
             }
         }
     }
@@ -462,8 +516,9 @@ private fun PerfilIconoMini(uri: Uri?, emoji: String) {
     Box(
         modifier = Modifier
             .size(48.dp)
+            .shadow(10.dp, CircleShape, spotColor = PlayPurple.copy(0.35f))
             .clip(CircleShape)
-            .background(KidPurple.copy(alpha = 0.2f)),
+            .background(PlayYellowSoft),
         contentAlignment = Alignment.Center
     ) {
         if (uri != null) {
@@ -484,30 +539,91 @@ private fun PerfilIconoMini(uri: Uri?, emoji: String) {
 }
 
 @Composable
-private fun TarjetaMenuKid(
+private fun PlayNavCard(
     emoji: String,
     titulo: String,
     subtitulo: String,
-    fondo: Color,
+    accentStart: Color,
+    accentEnd: Color,
+    nivel: Int?,
     onClick: () -> Unit
 ) {
-    Card(
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "navCard"
+    )
+    val shape = RoundedCornerShape(28.dp)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(containerColor = fondo),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            .scale(scale)
+            .shadow(
+                elevation = 20.dp,
+                shape = shape,
+                ambientColor = accentStart.copy(alpha = 0.22f),
+                spotColor = accentStart.copy(alpha = 0.32f)
+            )
+            .clip(shape)
+            .background(PlaySurface)
+            .clickable(interactionSource = interaction, indication = null) { onClick() }
     ) {
         Row(
-            Modifier.padding(22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
         ) {
-            Text(emoji, style = MaterialTheme.typography.displaySmall)
-            Column {
-                Text(titulo, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(subtitulo, style = MaterialTheme.typography.bodyLarge)
+            Box(
+                Modifier
+                    .width(12.dp)
+                    .fillMaxHeight()
+                    .background(
+                        Brush.verticalGradient(colors = listOf(accentStart, accentEnd))
+                    )
+            )
+            Column(
+                Modifier.padding(horizontal = 18.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (nivel != null) {
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(accentStart.copy(alpha = 0.16f))
+                            .padding(horizontal = 12.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            "Nivel $nivel",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = accentStart
+                        )
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(emoji, style = MaterialTheme.typography.displaySmall)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            titulo,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = PlayInk
+                        )
+                        Text(
+                            subtitulo,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = PlayInk.copy(alpha = 0.68f)
+                        )
+                    }
+                }
             }
         }
     }
@@ -562,172 +678,202 @@ private fun PantallaPerfil(factory: InglesViewModelFactory, nav: NavHostControll
 
     Scaffold(
         snackbarHost = { SnackbarHost(snack) },
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Mi perfil") },
+                title = {
+                    Text(
+                        "Mi perfil",
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = PlayInk
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidLavenderCompat()
+                    containerColor = PlaySurface.copy(alpha = 0.94f)
                 )
             )
         }
     ) { pad ->
-        Column(
-            modifier = Modifier
-                .padding(pad)
-                .padding(24.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            val uid = perfil?.id ?: 0L
-            val emoji = avatarEmojiParaUsuario(uid)
-            Box(
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(KidMint)
-                    .clickable {
-                        pick.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
-                    },
-                contentAlignment = Alignment.Center
+                    .padding(pad)
+                    .padding(24.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val u = perfil?.avatarUri?.let { Uri.parse(it) }
-                if (u != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(ctx).data(u).crossfade(true).build(),
-                        contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Text(emoji, style = MaterialTheme.typography.displayMedium)
+                val uid = perfil?.id ?: 0L
+                val emoji = avatarEmojiParaUsuario(uid)
+                Box(
+                    modifier = Modifier
+                        .size(128.dp)
+                        .shadow(16.dp, CircleShape, spotColor = PlayBlue.copy(0.35f))
+                        .clip(CircleShape)
+                        .background(PlayPurpleSoft)
+                        .clickable {
+                            pick.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    val u = perfil?.avatarUri?.let { Uri.parse(it) }
+                    if (u != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(ctx).data(u).crossfade(true).build(),
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(emoji, style = MaterialTheme.typography.displayLarge)
+                    }
                 }
-            }
-            Text(
-                "Toca el círculo para elegir foto",
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
-            )
-            OutlinedButton(
-                onClick = {
-                    vm.quitarAvatar {
-                        scope.launch { snack.showSnackbar("Avatar aleatorio activado") }
-                    }
-                },
-                shape = RoundedCornerShape(16.dp)
-            ) { Text("Usar avatar divertido") }
+                Text(
+                    "Toca para cambiar tu foto",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = PlayInk.copy(alpha = 0.65f),
+                    textAlign = TextAlign.Center
+                )
+                PlayOutlineButton(
+                    text = "Avatar divertido al azar",
+                    onClick = {
+                        vm.quitarAvatar {
+                            scope.launch { snack.showSnackbar("¡Listo!") }
+                        }
+                    },
+                    borderColor = PlayPurple
+                )
 
-            OutlinedTextField(
-                value = usuario,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Usuario") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
-            )
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = { vm.setNombreMostrar(it) },
-                label = { Text("Nombre para mostrar") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp)
-            )
-            OutlinedTextField(
-                value = nuevaContrasena,
-                onValueChange = { nuevaContrasena = it },
-                label = { Text("Nueva contraseña (opcional)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                shape = RoundedCornerShape(16.dp)
-            )
-            Button(
-                onClick = {
-                    val pwd = nuevaContrasena.takeIf { it.isNotBlank() }
-                    vm.guardar(pwd) {
-                        scope.launch { snack.showSnackbar("¡Perfil actualizado!") }
-                        nuevaContrasena = ""
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = KidTurquoise)
-            ) { Text("Guardar cambios") }
-            OutlinedButton(
-                onClick = { mostrarEliminar = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = KidCoral)
-            ) { Text("Eliminar perfil") }
+                OutlinedTextField(
+                    value = usuario,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Usuario") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = playTextFieldColors()
+                )
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { vm.setNombreMostrar(it) },
+                    label = { Text("Nombre para mostrar") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(22.dp),
+                    colors = playTextFieldColors()
+                )
+                OutlinedTextField(
+                    value = nuevaContrasena,
+                    onValueChange = { nuevaContrasena = it },
+                    label = { Text("Nueva contraseña (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = playTextFieldColors()
+                )
+                PlaySolidButton(
+                    text = "Guardar cambios",
+                    onClick = {
+                        val pwd = nuevaContrasena.takeIf { it.isNotBlank() }
+                        vm.guardar(pwd) {
+                            scope.launch { snack.showSnackbar("¡Perfil actualizado!") }
+                            nuevaContrasena = ""
+                        }
+                    },
+                    containerColor = PlayGreen
+                )
+                PlayOutlineButton(
+                    text = "Eliminar perfil",
+                    onClick = { mostrarEliminar = true },
+                    borderColor = PlayError,
+                    textColor = PlayError
+                )
+            }
         }
     }
 }
-
-@Composable
-private fun KidLavenderCompat(): Color =
-    org.fernandoblanco.inglesbasico.ui.theme.KidLavender.copy(alpha = 0.85f)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PantallaListaActividades(nav: NavHostController) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Actividades") },
+                title = {
+                    Text(
+                        "Tus niveles",
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = PlayInk
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidSun.copy(alpha = 0.4f)
+                    containerColor = PlaySurface.copy(alpha = 0.94f)
                 )
             )
         }
     ) { pad ->
-        KidGameBackground {
+        PlayScreenGradient(Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .padding(pad)
                     .padding(20.dp)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 Text(
-                    "Cada juego tiene 10 preguntas y ¡premio al final!",
-                    style = MaterialTheme.typography.bodyLarge,
+                    "10 preguntas por juego — al final verás tu puntuación",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = PlayInk.copy(alpha = 0.72f),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-                TarjetaMenuKid(
+                PlayNavCard(
                     emoji = "🖼️",
                     titulo = "Juego de imágenes",
                     subtitulo = "¿Cuál es la palabra en inglés?",
-                    fondo = KidMint.copy(alpha = 0.7f),
+                    accentStart = PlayBlue,
+                    accentEnd = PlayBlueDark,
+                    nivel = 1,
                     onClick = { nav.navigate(Rutas.ACT_IMAGEN) }
                 )
-                TarjetaMenuKid(
+                PlayNavCard(
                     emoji = "👂",
                     titulo = "Juego de audio",
-                    subtitulo = "Escucha y elige en inglés",
-                    fondo = KidCoral.copy(alpha = 0.25f),
+                    subtitulo = "Escucha y elige la respuesta",
+                    accentStart = PlayPurple,
+                    accentEnd = PlayYellow,
+                    nivel = 2,
                     onClick = { nav.navigate(Rutas.ACT_AUDIO) }
                 )
-                TarjetaMenuKid(
+                PlayNavCard(
                     emoji = "✏️",
                     titulo = "Completar palabras",
-                    subtitulo = "Llena los espacios",
-                    fondo = KidPurple.copy(alpha = 0.2f),
+                    subtitulo = "Elige la palabra que falta",
+                    accentStart = PlayGreen,
+                    accentEnd = PlayBlue,
+                    nivel = 3,
                     onClick = { nav.navigate(Rutas.ACT_PALABRAS) }
                 )
             }
@@ -741,11 +887,12 @@ private fun PantallaActividadImagen(factory: InglesViewModelFactory, nav: NavHos
     val vm: ActividadImagenViewModel = viewModel(factory = factory)
     val feedback by vm.feedback.collectAsState()
     val feedbackOk by vm.feedbackOk.collectAsState()
+    val solucion by vm.solucionCorrecta.collectAsState()
     val fin by vm.finSesion.collectAsState()
     val indice by vm.indice.collectAsState()
     val procesando by vm.procesando.collectAsState()
+    val pregunta by vm.preguntaVisible.collectAsState()
     val ctx = LocalContext.current
-    val p = vm.preguntaActual
 
     LaunchedEffect(Unit) {
         vm.sonido.collect { ok ->
@@ -754,19 +901,38 @@ private fun PantallaActividadImagen(factory: InglesViewModelFactory, nav: NavHos
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Imágenes") },
+                title = {
+                    Text(
+                        "Imágenes",
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = PlayInk
+                        )
                     }
                 },
                 actions = {
-                    TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión") }
+                    TextButton(onClick = { vm.reiniciar() }) {
+                        Text(
+                            "Nueva sesión",
+                            color = PlayBlue,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidMint.copy(alpha = 0.55f)
+                    containerColor = PlaySurface,
+                    titleContentColor = PlayInk,
+                    actionIconContentColor = PlayBlue
                 )
             )
         }
@@ -793,42 +959,62 @@ private fun PantallaActividadImagen(factory: InglesViewModelFactory, nav: NavHos
                             onSalir = { nav.popBackStack() }
                         )
                     }
-                } else if (p != null) {
-                    Column(
-                        Modifier
-                            .padding(20.dp)
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        KidSessionProgress(indice + 1, ActividadImagenViewModel.PREGUNTAS_POR_SESION)
-                        Text(
-                            "¿Cuál es su significado en inglés?",
-                            style = MaterialTheme.typography.headlineSmall,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            p.emoji,
-                            style = MaterialTheme.typography.displayLarge.copy(
-                                fontSize = MaterialTheme.typography.displayLarge.fontSize * 1.5f
-                            )
-                        )
-                        KidFeedbackBanner(feedback, feedbackOk)
-                        p.opciones.chunked(2).forEach { fila ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                fila.forEach { op ->
-                                    KidOptionButton(
-                                        label = op,
-                                        enabled = !procesando,
-                                        onClick = { vm.responder(op) },
-                                        modifier = Modifier.weight(1f)
+                } else if (pregunta != null) {
+                    key(indice, pregunta!!.correctaEn) {
+                        Column(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            GamePlayContentCard {
+                                KidSessionProgress(
+                                    indice + 1,
+                                    ActividadImagenViewModel.PREGUNTAS_POR_SESION
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "¿Cuál es en inglés?",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        pregunta!!.emoji,
+                                        style = MaterialTheme.typography.displayLarge.copy(
+                                            fontSize = MaterialTheme.typography.displayLarge.fontSize * 1.55f
+                                        )
                                     )
                                 }
-                                if (fila.size == 1) Spacer(Modifier.weight(1f))
+                            }
+                            GameFeedbackBlock(
+                                texto = feedback,
+                                esCorrecto = feedbackOk,
+                                solucionCorrecta = solucion
+                            )
+                            pregunta!!.opciones.chunked(2).forEach { fila ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    fila.forEach { op ->
+                                        KidOptionButton(
+                                            label = op,
+                                            enabled = !procesando,
+                                            onClick = { vm.responder(op) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    if (fila.size == 1) Spacer(Modifier.weight(1f))
+                                }
                             }
                         }
                     }
@@ -844,12 +1030,13 @@ private fun PantallaActividadAudio(factory: InglesViewModelFactory, nav: NavHost
     val vm: ActividadAudioViewModel = viewModel(factory = factory)
     val feedback by vm.feedback.collectAsState()
     val feedbackOk by vm.feedbackOk.collectAsState()
+    val solucion by vm.solucionCorrecta.collectAsState()
     val fin by vm.finSesion.collectAsState()
     val indice by vm.indice.collectAsState()
     val listo by vm.ttsListo.collectAsState()
     val procesando by vm.procesando.collectAsState()
+    val pregunta by vm.preguntaVisible.collectAsState()
     val ctx = LocalContext.current
-    val p = vm.preguntaActual
 
     LaunchedEffect(Unit) {
         vm.sonido.collect { ok ->
@@ -858,19 +1045,38 @@ private fun PantallaActividadAudio(factory: InglesViewModelFactory, nav: NavHost
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Audio") },
+                title = {
+                    Text(
+                        "Audio",
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = PlayInk
+                        )
                     }
                 },
                 actions = {
-                    TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión") }
+                    TextButton(onClick = { vm.reiniciar() }) {
+                        Text(
+                            "Nueva sesión",
+                            color = PlayPurple,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidCoral.copy(alpha = 0.22f)
+                    containerColor = PlaySurface,
+                    titleContentColor = PlayInk,
+                    actionIconContentColor = PlayPurple
                 )
             )
         }
@@ -897,30 +1103,43 @@ private fun PantallaActividadAudio(factory: InglesViewModelFactory, nav: NavHost
                             onSalir = { nav.popBackStack() }
                         )
                     }
-                } else if (p != null) {
-                    Column(
-                        Modifier
-                            .padding(20.dp)
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        KidSessionProgress(indice + 1, ActividadAudioViewModel.PREGUNTAS_POR_SESION)
-                        Text(
-                            "Escucha la palabra y elige la opción correcta en inglés.",
-                            style = MaterialTheme.typography.headlineSmall,
-                            textAlign = TextAlign.Center
-                        )
-                        KidListenButton(enabled = listo, onClick = { vm.reproducir() })
-                        KidFeedbackBanner(feedback, feedbackOk)
-                        p.opcionesIngles.forEach { op ->
-                            KidOptionButton(
-                                label = op,
-                                enabled = !procesando,
-                                onClick = { vm.responder(op) },
-                                modifier = Modifier.fillMaxWidth()
+                } else if (pregunta != null) {
+                    key(indice, pregunta!!.palabraIngles) {
+                        Column(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            GamePlayContentCard {
+                                KidSessionProgress(
+                                    indice + 1,
+                                    ActividadAudioViewModel.PREGUNTAS_POR_SESION
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Escucha y elige en inglés",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                KidListenButton(enabled = listo, onClick = { vm.reproducir() })
+                            }
+                            GameFeedbackBlock(
+                                texto = feedback,
+                                esCorrecto = feedbackOk,
+                                solucionCorrecta = solucion
                             )
+                            pregunta!!.opcionesIngles.forEach { op ->
+                                KidOptionButton(
+                                    label = op,
+                                    enabled = !procesando,
+                                    onClick = { vm.responder(op) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -935,11 +1154,12 @@ private fun PantallaActividadPalabras(factory: InglesViewModelFactory, nav: NavH
     val vm: ActividadPalabrasViewModel = viewModel(factory = factory)
     val feedback by vm.feedback.collectAsState()
     val feedbackOk by vm.feedbackOk.collectAsState()
+    val solucion by vm.solucionCorrecta.collectAsState()
     val fin by vm.finSesion.collectAsState()
     val indice by vm.indice.collectAsState()
     val procesando by vm.procesando.collectAsState()
+    val pregunta by vm.preguntaVisible.collectAsState()
     val ctx = LocalContext.current
-    val p = vm.preguntaActual
 
     LaunchedEffect(Unit) {
         vm.sonido.collect { ok ->
@@ -948,19 +1168,38 @@ private fun PantallaActividadPalabras(factory: InglesViewModelFactory, nav: NavH
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Palabras") },
+                title = {
+                    Text(
+                        "Palabras",
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = PlayInk
+                        )
                     }
                 },
                 actions = {
-                    TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión") }
+                    TextButton(onClick = { vm.reiniciar() }) {
+                        Text(
+                            "Nueva sesión",
+                            color = PlayGreen,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidPurple.copy(alpha = 0.2f)
+                    containerColor = PlaySurface,
+                    titleContentColor = PlayInk,
+                    actionIconContentColor = PlayGreen
                 )
             )
         }
@@ -987,36 +1226,52 @@ private fun PantallaActividadPalabras(factory: InglesViewModelFactory, nav: NavH
                             onSalir = { nav.popBackStack() }
                         )
                     }
-                } else if (p != null) {
-                    Column(
-                        Modifier
-                            .padding(20.dp)
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        KidSessionProgress(indice + 1, ActividadPalabrasViewModel.PREGUNTAS_POR_SESION)
-                        Text(
-                            "Completa la palabra en inglés",
-                            style = MaterialTheme.typography.titleLarge,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            p.incompleta,
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            color = KidTurquoise
-                        )
-                        KidFeedbackBanner(feedback, feedbackOk)
-                        p.opciones.forEach { w ->
-                            KidOptionButton(
-                                label = w,
-                                enabled = !procesando,
-                                onClick = { vm.responder(w) },
-                                modifier = Modifier.fillMaxWidth()
+                } else if (pregunta != null) {
+                    key(indice, pregunta!!.correcta) {
+                        Column(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            GamePlayContentCard {
+                                KidSessionProgress(
+                                    indice + 1,
+                                    ActividadPalabrasViewModel.PREGUNTAS_POR_SESION
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Completa la palabra en inglés",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Text(
+                                    pregunta!!.incompleta,
+                                    style = MaterialTheme.typography.displayMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    color = PlayBlue,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                )
+                            }
+                            GameFeedbackBlock(
+                                texto = feedback,
+                                esCorrecto = feedbackOk,
+                                solucionCorrecta = solucion
                             )
+                            pregunta!!.opciones.forEach { w ->
+                                KidOptionButton(
+                                    label = w,
+                                    enabled = !procesando,
+                                    onClick = { vm.responder(w) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -1032,89 +1287,132 @@ private fun PantallaReportes(factory: InglesViewModelFactory, nav: NavHostContro
     val u by vm.usuario.collectAsState()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Tus reportes") },
+                title = {
+                    Text(
+                        "Tus logros",
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = PlayInk
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KidSky.copy(alpha = 0.35f)
+                    containerColor = PlaySurface.copy(alpha = 0.94f)
                 )
             )
         }
     ) { pad ->
-        KidGameBackground {
+        PlayScreenGradient(Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .padding(pad)
                     .padding(20.dp)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 if (u == null) {
-                    Text("No hay datos de usuario.", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "No hay datos de usuario.",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = PlayInk.copy(alpha = 0.65f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 } else {
                     val user = u!!
-                    Card(
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(6.dp)
+                    val heroShape = RoundedCornerShape(28.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(22.dp, heroShape, spotColor = PlayPurple.copy(alpha = 0.3f))
+                            .clip(heroShape)
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(PlayBlue, PlayPurple)
+                                )
+                            )
+                            .padding(24.dp)
                     ) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("⭐ Nivel ${user.nivel}", style = MaterialTheme.typography.headlineSmall)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                "Puntos totales: ${user.puntajeTotal}",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = KidTurquoise
+                                "⭐ Nivel ${user.nivel}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                "Puntos: ${user.puntajeTotal}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PlayYellow
                             )
                         }
                     }
                     Text(
-                        "Aciertos vs intentos",
+                        "Rendimiento por juego",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = PlayInk
                     )
                     BarraJuegoKid(
                         "🖼️ Imágenes",
                         user.aciertosImagen,
                         user.partidasImagen,
-                        KidTurquoise
+                        PlayBlue
                     )
                     BarraJuegoKid(
                         "👂 Audio",
                         user.aciertosAudio,
                         user.partidasAudio,
-                        KidCoral
+                        PlayPurple
                     )
                     BarraJuegoKid(
                         "✏️ Palabras",
                         user.aciertosPalabras,
                         user.partidasPalabras,
-                        KidPurple
+                        PlayGreen
                     )
                     val mejoras = areasMejora(user)
-                    Card(
-                        shape = RoundedCornerShape(22.dp),
-                        colors = CardDefaults.cardColors(containerColor = KidSun.copy(alpha = 0.45f))
+                    val tipShape = RoundedCornerShape(26.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(16.dp, tipShape, spotColor = PlayYellow.copy(alpha = 0.35f))
+                            .clip(tipShape)
+                            .background(PlayYellowSoft)
+                            .padding(20.dp)
                     ) {
-                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(
-                                "Áreas para mejorar",
+                                "Consejos para mejorar",
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = PlayInk
                             )
                             if (mejoras.isEmpty()) {
                                 Text(
-                                    "¡Vas muy bien! Sigue practicando los tres juegos por igual.",
-                                    style = MaterialTheme.typography.bodyLarge
+                                    "¡Genial! Sigue jugando los tres modos para subir de nivel.",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = PlayInk.copy(alpha = 0.72f)
                                 )
                             } else {
                                 mejoras.forEach { linea ->
-                                    Text("• $linea", style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        "• $linea",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = PlayInk.copy(alpha = 0.78f)
+                                    )
                                 }
                             }
                         }
@@ -1127,23 +1425,58 @@ private fun PantallaReportes(factory: InglesViewModelFactory, nav: NavHostContro
 
 @Composable
 private fun BarraJuegoKid(titulo: String, aciertos: Int, intentos: Int, color: Color) {
-    val ratio = if (intentos == 0) 0f else aciertos.toFloat() / intentos
+    val ratio =
+        if (intentos == 0) 0f else (aciertos.toFloat() / intentos).coerceIn(0f, 1f)
+    val animated by animateFloatAsState(
+        targetValue = ratio,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "barraProgreso"
+    )
     val errores = (intentos - aciertos).coerceAtLeast(0)
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f))
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            LinearProgressIndicator(
-                progress = { ratio },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(14.dp),
-                color = color,
-                trackColor = color.copy(alpha = 0.2f),
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 16.dp,
+                shape = shape,
+                ambientColor = color.copy(alpha = 0.18f),
+                spotColor = color.copy(alpha = 0.3f)
             )
+            .clip(shape)
+            .background(PlaySurface)
+    ) {
+        Column(
+            Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                titulo,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = PlayInk
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(18.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(color.copy(alpha = 0.14f))
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(animated)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(color, color.copy(alpha = 0.88f))
+                            )
+                        )
+                )
+            }
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1151,18 +1484,21 @@ private fun BarraJuegoKid(titulo: String, aciertos: Int, intentos: Int, color: C
                 Text(
                     "✅ $aciertos aciertos",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = KidTurquoise
+                    fontWeight = FontWeight.SemiBold,
+                    color = PlayGreen
                 )
                 Text(
                     "❌ $errores errores",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = KidCoral
+                    fontWeight = FontWeight.SemiBold,
+                    color = PlayError.copy(alpha = 0.92f)
                 )
             }
             Text(
-                "${(ratio * 100).toInt()} % de acierto",
+                "${(ratio * 100).toInt()} % de aciertos",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                fontWeight = FontWeight.Bold,
+                color = color
             )
         }
     }

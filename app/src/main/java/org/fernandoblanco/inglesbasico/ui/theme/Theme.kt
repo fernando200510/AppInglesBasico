@@ -12,45 +12,45 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val KidLight = lightColorScheme(
-    primary = KidTurquoise,
+private val AppLight = lightColorScheme(
+    primary = PlayBlue,
     onPrimary = Color.White,
-    primaryContainer = KidMint,
-    onPrimaryContainer = KidDeep,
-    secondary = KidSun,
-    onSecondary = KidDeep,
-    secondaryContainer = Color(0xFFFFF3CC),
-    onSecondaryContainer = KidDeep,
-    tertiary = KidPurple,
+    primaryContainer = KidCardBlue,
+    onPrimaryContainer = PlayInk,
+    secondary = PlayPurple,
+    onSecondary = Color.White,
+    secondaryContainer = PlayPurpleSoft,
+    onSecondaryContainer = PlayInk,
+    tertiary = PlayGreen,
     onTertiary = Color.White,
-    tertiaryContainer = KidLavender,
-    onTertiaryContainer = KidDeep,
-    error = KidCoral,
+    tertiaryContainer = PlayGreenSoft,
+    onTertiaryContainer = PlayInk,
+    error = PlayError,
     onError = Color.White,
-    background = KidCream,
-    onBackground = KidDeep,
-    surface = Color.White,
-    onSurface = KidDeep,
-    surfaceVariant = KidMint,
-    onSurfaceVariant = KidDeep,
-    outline = KidTurquoiseDark.copy(alpha = 0.45f)
+    background = PlayCream,
+    onBackground = PlayInk,
+    surface = PlaySurface,
+    onSurface = PlayInk,
+    surfaceVariant = Color(0xFFF0F4FF),
+    onSurfaceVariant = PlayInk,
+    outline = PlayBlue.copy(alpha = 0.35f)
 )
 
-private val KidDark = darkColorScheme(
-    primary = KidSky,
-    onPrimary = KidDeep,
-    primaryContainer = KidTurquoiseDark,
+private val AppDark = darkColorScheme(
+    primary = PlayBlue,
+    onPrimary = PlayInk,
+    primaryContainer = PlayBlueDark,
     onPrimaryContainer = Color.White,
-    secondary = KidSun,
-    onSecondary = KidDeep,
-    tertiary = KidLavender,
-    onTertiary = KidDeep,
-    background = KidDeep,
+    secondary = PlayPurpleSoft,
+    onSecondary = PlayInk,
+    tertiary = PlayGreen,
+    onTertiary = Color.White,
+    background = Color(0xFF12141C),
     onBackground = Color(0xFFF5F5F5),
-    surface = Color(0xFF3A3F52),
+    surface = Color(0xFF1E2230),
     onSurface = Color(0xFFF5F5F5),
-    surfaceVariant = Color(0xFF4A5068),
-    onSurfaceVariant = Color(0xFFE0E0E0)
+    surfaceVariant = Color(0xFF2A2F42),
+    onSurfaceVariant = Color(0xFFE0E4F0)
 )
 
 @Composable
@@ -59,10 +59,7 @@ fun InglesBasicoTheme(
     @Suppress("UNUSED_PARAMETER") dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        darkTheme -> KidDark
-        else -> KidLight
-    }
+    val colorScheme = if (darkTheme) AppDark else AppLight
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

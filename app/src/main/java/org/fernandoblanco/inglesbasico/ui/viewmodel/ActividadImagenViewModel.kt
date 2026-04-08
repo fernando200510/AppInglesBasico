@@ -36,11 +36,14 @@ class ActividadImagenViewModel(
     private val _indice = MutableStateFlow(0)
     val indice: StateFlow<Int> = _indice.asStateFlow()
 
+    /** Pregunta que debe verse ahora; siempre sincronizado con [_indice] y sesión. */
+    private val _preguntaVisible = MutableStateFlow<PreguntaImagen?>(null)
+    val preguntaVisible: StateFlow<PreguntaImagen?> = _preguntaVisible.asStateFlow()
+
     private val _aciertosSesion = MutableStateFlow(0)
     val aciertosSesion: StateFlow<Int> = _aciertosSesion.asStateFlow()
 
     private val _finSesion = MutableStateFlow<Pair<Int, Int>?>(null)
-    /** null = en juego; Pair(aciertos, total) al terminar */
     val finSesion: StateFlow<Pair<Int, Int>?> = _finSesion.asStateFlow()
 
     private val _feedback = MutableStateFlow<String?>(null)
@@ -48,6 +51,10 @@ class ActividadImagenViewModel(
 
     private val _feedbackOk = MutableStateFlow<Boolean?>(null)
     val feedbackOk: StateFlow<Boolean?> = _feedbackOk.asStateFlow()
+
+    /** Si la última respuesta fue incorrecta, aquí va la palabra correcta (para mostrar en UI). */
+    private val _solucionCorrecta = MutableStateFlow<String?>(null)
+    val solucionCorrecta: StateFlow<String?> = _solucionCorrecta.asStateFlow()
 
     private val _procesando = MutableStateFlow(false)
     val procesando: StateFlow<Boolean> = _procesando.asStateFlow()
@@ -59,22 +66,22 @@ class ActividadImagenViewModel(
         reiniciar()
     }
 
-    val preguntaActual: PreguntaImagen?
-        get() {
-            if (_finSesion.value != null) return null
-            val i = _indice.value
-            return preguntasSesion.getOrNull(i)
+    private fun sincronizarPreguntaVisible() {
+        _preguntaVisible.value = when {
+            _finSesion.value != null -> null
+            else -> preguntasSesion.getOrNull(_indice.value)
         }
+    }
 
     fun limpiarFeedback() {
         _feedback.value = null
         _feedbackOk.value = null
+        _solucionCorrecta.value = null
     }
 
     fun reiniciar() {
-        val barajado = pool.shuffled()
-        val elegidas = barajado.take(PREGUNTAS_POR_SESION)
-        preguntasSesion = elegidas.map { item ->
+        val base = pool.shuffled().distinctBy { it.enKey.lowercase() }.take(PREGUNTAS_POR_SESION)
+        preguntasSesion = base.map { item ->
             val opciones = VocabularyBank.randomOptions(item, pool, 4)
             PreguntaImagen(emoji = item.emoji, correctaEn = item.en, opciones = opciones)
         }
@@ -83,37 +90,43 @@ class ActividadImagenViewModel(
         _finSesion.value = null
         _feedback.value = null
         _feedbackOk.value = null
+        _solucionCorrecta.value = null
         _procesando.value = false
+        sincronizarPreguntaVisible()
     }
 
     fun responder(inglesElegido: String) {
         if (_finSesion.value != null || _procesando.value) return
-        val p = preguntaActual ?: return
+        val idx = _indice.value
+        val pregunta = preguntasSesion.getOrNull(idx) ?: return
+        _procesando.value = true
         viewModelScope.launch {
-            _procesando.value = true
-            val id = sesionUsuario.usuarioIdActivo ?: run {
+            val id = sesionUsuario.usuarioIdActivo
+            if (id == null) {
                 _procesando.value = false
                 return@launch
             }
-            val ok = inglesElegido.equals(p.correctaEn, ignoreCase = true)
+            val ok = inglesElegido.equals(pregunta.correctaEn, ignoreCase = true)
             _sonido.tryEmit(ok)
             repositorio.registrarResultadoActividad(
                 id,
                 UsuarioRepository.TipoActividad.IMAGEN,
                 ok
             )
-            _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
             _feedbackOk.value = ok
+            _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
+            _solucionCorrecta.value = if (ok) null else pregunta.correctaEn
             if (ok) _aciertosSesion.value = _aciertosSesion.value + 1
-            delay(750)
+            delay(950)
             _feedback.value = null
             _feedbackOk.value = null
-            val ultima = _indice.value >= PREGUNTAS_POR_SESION - 1
-            if (ultima) {
+            _solucionCorrecta.value = null
+            if (idx >= PREGUNTAS_POR_SESION - 1) {
                 _finSesion.value = _aciertosSesion.value to PREGUNTAS_POR_SESION
             } else {
-                _indice.value = _indice.value + 1
+                _indice.value = idx + 1
             }
+            sincronizarPreguntaVisible()
             _procesando.value = false
         }
     }
@@ -127,9 +140,9 @@ class ActividadImagenViewModel(
     ).random()
 
     private fun mensajeIncorrecto(): String = listOf(
-        "¡Casi! Sigue intentando",
-        "¡Tú puedes! Otra vez",
-        "No era esa, ¡prueba otra!",
-        "¡Ánimo! Ya casi"
+        "¡Casi!",
+        "¡Sigue intentando!",
+        "Esa no era",
+        "¡Ánimo!"
     ).random()
 }
