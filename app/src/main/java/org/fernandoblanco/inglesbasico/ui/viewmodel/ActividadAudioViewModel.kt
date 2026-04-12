@@ -19,6 +19,7 @@ import java.util.Locale
 
 data class PreguntaAudio(
     val palabraIngles: String,
+    val palabraEspanol: String,
     val opcionesIngles: List<String>
 )
 
@@ -89,17 +90,20 @@ class ActividadAudioViewModel(
         tts?.speak(p.palabraIngles, TextToSpeech.QUEUE_FLUSH, null, "ingles_${p.palabraIngles}")
     }
 
-    fun limpiarFeedback() {
-        _feedback.value = null
-        _feedbackOk.value = null
-        _solucionCorrecta.value = null
-    }
-
     fun reiniciar() {
         val base = pool.shuffled().distinctBy { it.enKey.lowercase() }.take(PREGUNTAS_POR_SESION)
         preguntasSesion = base.map { item ->
-            val opciones = VocabularyBank.randomOptions(item, pool, 4)
-            PreguntaAudio(palabraIngles = item.en, opcionesIngles = opciones)
+            val opcionesEn = VocabularyBank.randomOptions(item, pool, 4)
+            val opcionesConTrad = opcionesEn.map { enTexto ->
+                val vocabItem = pool.find { it.en == enTexto }
+                if (vocabItem != null) "${vocabItem.emoji} $enTexto — ${vocabItem.es}"
+                else enTexto
+            }
+            PreguntaAudio(
+                palabraIngles = item.en,
+                palabraEspanol = item.es,
+                opcionesIngles = opcionesConTrad
+            )
         }
         _indice.value = 0
         _aciertosSesion.value = 0
@@ -111,27 +115,20 @@ class ActividadAudioViewModel(
         sincronizarPreguntaVisible()
     }
 
-    fun responder(inglesElegido: String) {
+    fun responder(opcionElegida: String) {
         if (_finSesion.value != null || _procesando.value) return
         val idx = _indice.value
         val pregunta = preguntasSesion.getOrNull(idx) ?: return
         _procesando.value = true
         viewModelScope.launch {
             val id = sesionUsuario.usuarioIdActivo
-            if (id == null) {
-                _procesando.value = false
-                return@launch
-            }
-            val ok = inglesElegido.equals(pregunta.palabraIngles, ignoreCase = true)
+            if (id == null) { _procesando.value = false; return@launch }
+            val ok = opcionElegida.contains(pregunta.palabraIngles, ignoreCase = true)
             _sonido.tryEmit(ok)
-            repositorio.registrarResultadoActividad(
-                id,
-                UsuarioRepository.TipoActividad.AUDIO,
-                ok
-            )
+            repositorio.registrarResultadoActividad(id, UsuarioRepository.TipoActividad.AUDIO, ok)
             _feedbackOk.value = ok
             _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
-            _solucionCorrecta.value = if (ok) null else pregunta.palabraIngles
+            _solucionCorrecta.value = if (ok) null else "${pregunta.palabraIngles} — ${pregunta.palabraEspanol}"
             if (ok) _aciertosSesion.value = _aciertosSesion.value + 1
             delay(950)
             _feedback.value = null
@@ -147,20 +144,8 @@ class ActividadAudioViewModel(
         }
     }
 
-    private fun mensajeCorrecto(): String = listOf(
-        "¡Perfecto!",
-        "¡Qué oído!",
-        "¡Excelente!",
-        "¡Lo pillaste!",
-        "¡Sí!"
-    ).random()
-
-    private fun mensajeIncorrecto(): String = listOf(
-        "¡Escucha otra vez!",
-        "¡Casi!",
-        "Prueba otra opción",
-        "¡Tú puedes!"
-    ).random()
+    private fun mensajeCorrecto() = listOf("¡Perfecto!", "¡Qué oído!", "¡Excelente!", "¡Lo pillaste!", "¡Sí!").random()
+    private fun mensajeIncorrecto() = listOf("¡Escucha otra vez!", "¡Casi!", "Prueba otra opción", "¡Tú puedes!").random()
 
     override fun onCleared() {
         tts?.stop()

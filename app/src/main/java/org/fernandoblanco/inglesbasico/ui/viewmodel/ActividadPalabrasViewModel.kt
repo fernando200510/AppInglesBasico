@@ -12,12 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
 import org.fernandoblanco.inglesbasico.data.UsuarioRepository
-import org.fernandoblanco.inglesbasico.data.VocabularyBank
 import org.fernandoblanco.inglesbasico.data.VocabItem
+import org.fernandoblanco.inglesbasico.data.VocabularyBank
 
 data class PreguntaPalabra(
     val incompleta: String,
     val correcta: String,
+    val pista: String,
     val opciones: List<String>
 )
 
@@ -62,9 +63,7 @@ class ActividadPalabrasViewModel(
     private val _sonido = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
     val sonido: SharedFlow<Boolean> = _sonido.asSharedFlow()
 
-    init {
-        reiniciar()
-    }
+    init { reiniciar() }
 
     private fun sincronizarPreguntaVisible() {
         _preguntaVisible.value = when {
@@ -84,29 +83,17 @@ class ActividadPalabrasViewModel(
         for (d in distractores) {
             if (out.size >= OPCIONES) break
             val k = d.lowercase()
-            if (k !in vistos) {
-                vistos.add(k)
-                out.add(d)
-            }
+            if (k !in vistos) { vistos.add(k); out.add(d) }
         }
         if (out.size < OPCIONES) {
             for (it in pool.shuffled()) {
                 if (out.size >= OPCIONES) break
                 val d = VocabularyBank.enmascarar(it.en).second
                 val k = d.lowercase()
-                if (k !in vistos) {
-                    vistos.add(k)
-                    out.add(d)
-                }
+                if (k !in vistos) { vistos.add(k); out.add(d) }
             }
         }
         return out.shuffled()
-    }
-
-    fun limpiarFeedback() {
-        _feedback.value = null
-        _feedbackOk.value = null
-        _solucionCorrecta.value = null
     }
 
     fun reiniciar() {
@@ -114,7 +101,12 @@ class ActividadPalabrasViewModel(
         preguntasSesion = base.map { item: VocabItem ->
             val (mask, full) = VocabularyBank.enmascarar(item.en)
             val opciones = cuatroOpcionesUnicas(full, item)
-            PreguntaPalabra(incompleta = mask, correcta = full, opciones = opciones)
+            PreguntaPalabra(
+                incompleta = mask,
+                correcta = full,
+                pista = "${item.es}",
+                opciones = opciones
+            )
         }
         _indice.value = 0
         _aciertosSesion.value = 0
@@ -133,17 +125,10 @@ class ActividadPalabrasViewModel(
         _procesando.value = true
         viewModelScope.launch {
             val id = sesionUsuario.usuarioIdActivo
-            if (id == null) {
-                _procesando.value = false
-                return@launch
-            }
+            if (id == null) { _procesando.value = false; return@launch }
             val ok = palabra.equals(pregunta.correcta, ignoreCase = true)
             _sonido.tryEmit(ok)
-            repositorio.registrarResultadoActividad(
-                id,
-                UsuarioRepository.TipoActividad.PALABRAS,
-                ok
-            )
+            repositorio.registrarResultadoActividad(id, UsuarioRepository.TipoActividad.PALABRAS, ok)
             _feedbackOk.value = ok
             _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
             _solucionCorrecta.value = if (ok) null else pregunta.correcta
@@ -162,18 +147,6 @@ class ActividadPalabrasViewModel(
         }
     }
 
-    private fun mensajeCorrecto(): String = listOf(
-        "¡Fantástico!",
-        "¡Palabra completada!",
-        "¡Eres un campeón!",
-        "¡Muy bien!",
-        "¡Súper!"
-    ).random()
-
-    private fun mensajeIncorrecto(): String = listOf(
-        "¡Casi!",
-        "Prueba otra opción",
-        "¡Ánimo!",
-        "Sigue intentando"
-    ).random()
+    private fun mensajeCorrecto() = listOf("¡Fantástico!", "¡Palabra completada!", "¡Eres un campeón!", "¡Muy bien!", "¡Súper!").random()
+    private fun mensajeIncorrecto() = listOf("¡Casi!", "Prueba otra opción", "¡Ánimo!", "Sigue intentando").random()
 }

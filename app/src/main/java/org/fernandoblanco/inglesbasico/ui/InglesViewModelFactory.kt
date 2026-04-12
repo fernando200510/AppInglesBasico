@@ -10,6 +10,7 @@ import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadPalabrasViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.PerfilViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ReportesViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadVocabularioViewModel
 
 @Suppress("UNCHECKED_CAST")
 class InglesViewModelFactory(
@@ -34,6 +35,8 @@ class InglesViewModelFactory(
                 ActividadPalabrasViewModel(repo, sesion) as T
             modelClass.isAssignableFrom(ActividadChatViewModel::class.java) ->
                 ActividadChatViewModel(repo, sesion) as T
+            modelClass.isAssignableFrom(ActividadVocabularioViewModel::class.java) ->
+                ActividadVocabularioViewModel(sesion) as T
             else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
         }
     }

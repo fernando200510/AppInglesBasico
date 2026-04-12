@@ -17,6 +17,7 @@ import org.fernandoblanco.inglesbasico.data.VocabularyBank
 data class PreguntaImagen(
     val emoji: String,
     val correctaEn: String,
+    val correctaEs: String,
     val opciones: List<String>
 )
 
@@ -36,7 +37,6 @@ class ActividadImagenViewModel(
     private val _indice = MutableStateFlow(0)
     val indice: StateFlow<Int> = _indice.asStateFlow()
 
-    /** Pregunta que debe verse ahora; siempre sincronizado con [_indice] y sesión. */
     private val _preguntaVisible = MutableStateFlow<PreguntaImagen?>(null)
     val preguntaVisible: StateFlow<PreguntaImagen?> = _preguntaVisible.asStateFlow()
 
@@ -52,7 +52,6 @@ class ActividadImagenViewModel(
     private val _feedbackOk = MutableStateFlow<Boolean?>(null)
     val feedbackOk: StateFlow<Boolean?> = _feedbackOk.asStateFlow()
 
-    /** Si la última respuesta fue incorrecta, aquí va la palabra correcta (para mostrar en UI). */
     private val _solucionCorrecta = MutableStateFlow<String?>(null)
     val solucionCorrecta: StateFlow<String?> = _solucionCorrecta.asStateFlow()
 
@@ -73,17 +72,21 @@ class ActividadImagenViewModel(
         }
     }
 
-    fun limpiarFeedback() {
-        _feedback.value = null
-        _feedbackOk.value = null
-        _solucionCorrecta.value = null
-    }
-
     fun reiniciar() {
         val base = pool.shuffled().distinctBy { it.enKey.lowercase() }.take(PREGUNTAS_POR_SESION)
         preguntasSesion = base.map { item ->
-            val opciones = VocabularyBank.randomOptions(item, pool, 4)
-            PreguntaImagen(emoji = item.emoji, correctaEn = item.en, opciones = opciones)
+            val opcionesItems = VocabularyBank.randomOptions(item, pool, 4)
+            val opcionesConTrad = opcionesItems.map { enTexto ->
+                val vocabItem = pool.find { it.en == enTexto }
+                if (vocabItem != null) "${vocabItem.emoji} $enTexto — ${vocabItem.es}"
+                else enTexto
+            }
+            PreguntaImagen(
+                emoji = item.emoji,
+                correctaEn = item.en,
+                correctaEs = item.es,
+                opciones = opcionesConTrad
+            )
         }
         _indice.value = 0
         _aciertosSesion.value = 0
@@ -95,27 +98,20 @@ class ActividadImagenViewModel(
         sincronizarPreguntaVisible()
     }
 
-    fun responder(inglesElegido: String) {
+    fun responder(opcionElegida: String) {
         if (_finSesion.value != null || _procesando.value) return
         val idx = _indice.value
         val pregunta = preguntasSesion.getOrNull(idx) ?: return
         _procesando.value = true
         viewModelScope.launch {
             val id = sesionUsuario.usuarioIdActivo
-            if (id == null) {
-                _procesando.value = false
-                return@launch
-            }
-            val ok = inglesElegido.equals(pregunta.correctaEn, ignoreCase = true)
+            if (id == null) { _procesando.value = false; return@launch }
+            val ok = opcionElegida.contains(pregunta.correctaEn, ignoreCase = true)
             _sonido.tryEmit(ok)
-            repositorio.registrarResultadoActividad(
-                id,
-                UsuarioRepository.TipoActividad.IMAGEN,
-                ok
-            )
+            repositorio.registrarResultadoActividad(id, UsuarioRepository.TipoActividad.IMAGEN, ok)
             _feedbackOk.value = ok
             _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
-            _solucionCorrecta.value = if (ok) null else pregunta.correctaEn
+            _solucionCorrecta.value = if (ok) null else "${pregunta.emoji} ${pregunta.correctaEn} — ${pregunta.correctaEs}"
             if (ok) _aciertosSesion.value = _aciertosSesion.value + 1
             delay(950)
             _feedback.value = null
@@ -131,18 +127,6 @@ class ActividadImagenViewModel(
         }
     }
 
-    private fun mensajeCorrecto(): String = listOf(
-        "¡Genial!",
-        "¡Muy bien!",
-        "¡Lo lograste!",
-        "¡Eres increíble!",
-        "¡Correcto!"
-    ).random()
-
-    private fun mensajeIncorrecto(): String = listOf(
-        "¡Casi!",
-        "¡Sigue intentando!",
-        "Esa no era",
-        "¡Ánimo!"
-    ).random()
+    private fun mensajeCorrecto() = listOf("¡Genial!", "¡Muy bien!", "¡Lo lograste!", "¡Eres increíble!", "¡Correcto!").random()
+    private fun mensajeIncorrecto() = listOf("¡Casi!", "¡Sigue intentando!", "Esa no era", "¡Ánimo!").random()
 }
