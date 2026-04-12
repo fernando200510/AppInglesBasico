@@ -12,7 +12,6 @@ data class UsuarioEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val usuario: String,
     val nombreMostrar: String,
-    /** URI de imagen de galería (`content://`); null si usa avatar emoji por defecto. */
     val avatarUri: String? = null,
     val hashContrasena: String,
     val sal: String,
@@ -24,5 +23,9 @@ data class UsuarioEntity(
     val aciertosAudio: Int = 0,
     val partidasPalabras: Int = 0,
     val aciertosPalabras: Int = 0,
-    val creadoEn: Long = System.currentTimeMillis()
+    val creadoEn: Long = System.currentTimeMillis(),
+    val rachaActual: Int = 0,
+    val rachaMaxima: Int = 0,
+    val ultimaActividad: Long = 0L,
+    val mascotaId: String = "zorro"
 )

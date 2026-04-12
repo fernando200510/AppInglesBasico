@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import org.fernandoblanco.inglesbasico.InglesApp
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadAudioViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadChatViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadImagenViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadPalabrasViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthViewModel
@@ -31,6 +32,8 @@ class InglesViewModelFactory(
                 ActividadAudioViewModel(app, repo, sesion) as T
             modelClass.isAssignableFrom(ActividadPalabrasViewModel::class.java) ->
                 ActividadPalabrasViewModel(repo, sesion) as T
+            modelClass.isAssignableFrom(ActividadChatViewModel::class.java) ->
+                ActividadChatViewModel(repo, sesion) as T
             else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
         }
     }

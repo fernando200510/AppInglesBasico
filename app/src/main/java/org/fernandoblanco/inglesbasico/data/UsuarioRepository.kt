@@ -126,4 +126,25 @@ class UsuarioRepository(
     }
 
     enum class TipoActividad { IMAGEN, AUDIO, PALABRAS }
+    suspend fun actualizarRacha(usuarioId: Long): Int {
+        val u = dao.obtenerPorId(usuarioId) ?: return 0
+        val ahora = System.currentTimeMillis()
+        val unDia = 24 * 60 * 60 * 1000L
+        val dosDias = 2 * unDia
+        val nueva = when {
+            u.ultimaActividad == 0L -> 1
+            ahora - u.ultimaActividad < unDia -> u.rachaActual
+            ahora - u.ultimaActividad < dosDias -> u.rachaActual + 1
+            else -> 1
+        }
+        val nuevaMax = maxOf(u.rachaMaxima, nueva)
+        dao.actualizar(u.copy(rachaActual = nueva, rachaMaxima = nuevaMax, ultimaActividad = ahora))
+        return nueva
+    }
+
+    suspend fun guardarMascota(usuarioId: Long, mascotaId: String): Result<Unit> {
+        val u = dao.obtenerPorId(usuarioId) ?: return Result.failure(IllegalStateException("Usuario no encontrado"))
+        dao.actualizar(u.copy(mascotaId = mascotaId))
+        return Result.success(Unit)
+    }
 }

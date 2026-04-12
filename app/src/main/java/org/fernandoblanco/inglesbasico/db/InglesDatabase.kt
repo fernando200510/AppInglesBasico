@@ -11,7 +11,7 @@ import org.fernandoblanco.inglesbasico.db.entity.UsuarioEntity
 
 @Database(
     entities = [UsuarioEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class InglesDatabase : RoomDatabase() {
@@ -27,6 +27,15 @@ abstract class InglesDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE usuarios ADD COLUMN rachaActual INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE usuarios ADD COLUMN rachaMaxima INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE usuarios ADD COLUMN ultimaActividad INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE usuarios ADD COLUMN mascotaId TEXT NOT NULL DEFAULT 'zorro'")
+            }
+        }
+
         @Volatile
         private var instancia: InglesDatabase? = null
 
@@ -36,7 +45,8 @@ abstract class InglesDatabase : RoomDatabase() {
                     context.applicationContext,
                     InglesDatabase::class.java,
                     NOMBRE_DB
-                ).addMigrations(MIGRATION_1_2)
+                )
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build().also { instancia = it }
             }
         }
