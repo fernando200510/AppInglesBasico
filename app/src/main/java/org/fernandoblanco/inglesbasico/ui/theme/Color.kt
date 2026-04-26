@@ -2,45 +2,37 @@ package org.fernandoblanco.inglesbasico.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Naranja = Color(0xFFFF6B35)
-val NaranjaOscuro = Color(0xFFE55A2B)
-val Amarillo = Color(0xFFFFD23F)
-val AmarilloSuave = Color(0xFFFFF3CD)
-val Verde = Color(0xFF06D6A0)
-val VerdeOscuro = Color(0xFF048A81)
-val VerdeSuave = Color(0xFFE0FFF8)
-val Azul = Color(0xFF118AB2)
-val AzulSuave = Color(0xFFE0F4FF)
-val Morado = Color(0xFF7B2FBE)
-val MoradoSuave = Color(0xFFF3E8FF)
-val Rosa = Color(0xFFFF6B9D)
-val RosaSuave = Color(0xFFFFE8F3)
-val Rojo = Color(0xFFEF233C)
+val PlayOrange = Color(0xFFFF9800)
+val PlayOrangeDark = Color(0xFFE65100)
+val PlayPurple = Color(0xFF9C27B0)
+val PlayPurpleLight = Color(0xFFF3E5F5)
+val PlayGreen = Color(0xFF4CAF50)
+val PlayGreenLight = Color(0xFFE8F5E9)
+val PlayBlue = Color(0xFF2196F3)
+val PlayYellow = Color(0xFFFFEB3B)
 
+val FondoClaro = Color(0xFFF8F9FF)
 val SuperficieClaro = Color(0xFFFFFFFF)
-val FondoClaro = Color(0xFFFFF8F0)
-val TarjetaClaro = Color(0xFFFFFFFF)
-val TextoPrincipalClaro = Color(0xFF1A1A2E)
-val TextoSecundarioClaro = Color(0xFF6B7280)
+val TextoPrincipalClaro = Color(0xFF2D2D2D)
 
-val SuperficieOscuro = Color(0xFF1E1E2E)
-val FondoOscuro = Color(0xFF12121F)
-val TarjetaOscuro = Color(0xFF2A2A3E)
-val TextoPrincipalOscuro = Color(0xFFF0F0FF)
-val TextoSecundarioOscuro = Color(0xFFB0B0CC)
+val FondoOscuro = Color(0xFF0F172A)
+val SuperficieOscuro = Color(0xFF1E293B)
+val TarjetaOscuro = Color(0xFF334155)
+val TextoPrincipalOscuro = Color(0xFFF1F5F9)
 
-val PlayBlue = Azul
-val PlayBlueDark = Color(0xFF0A6E8A)
-val PlayGreen = Verde
-val PlayYellow = Amarillo
-val PlayYellowSoft = AmarilloSuave
-val PlayPurple = Morado
-val PlayPurpleSoft = MoradoSuave
-val PlayError = Rojo
+val Naranja = PlayOrange
+val NaranjaOscuro = PlayOrangeDark
+val Amarillo = PlayYellow
+val AmarilloSuave = Color(0xFFFFECB3)
+val Verde = PlayGreen
+val VerdeSuave = PlayGreenLight
+val Azul = PlayBlue
+val Morado = PlayPurple
+val MoradoSuave = PlayPurpleLight
+val Rosa = Color(0xFFCE93D8)
+val Rojo = Color(0xFFBA1A1A)
+val PlayError = Color(0xFFBA1A1A)
+
+val PlayCream = AmarilloSuave
 val PlayInk = TextoPrincipalClaro
 val PlaySurface = SuperficieClaro
-val PlayCream = FondoClaro
-val PlayOrange = Naranja
-val PlayOrangeSoft = Color(0xFFFFEDE6)
-val PlayPink = Rosa
-val PlayPinkSoft = RosaSuave

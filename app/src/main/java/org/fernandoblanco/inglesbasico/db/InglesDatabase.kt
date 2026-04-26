@@ -11,7 +11,7 @@ import org.fernandoblanco.inglesbasico.db.entity.PadreEntity
 
 @Database(
     entities = [PadreEntity::class, NinoEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class InglesDatabase : RoomDatabase() {
@@ -31,7 +31,10 @@ abstract class InglesDatabase : RoomDatabase() {
                     context.applicationContext,
                     InglesDatabase::class.java,
                     NOMBRE_DB
-                ).build().also { instancia = it }
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    .also { instancia = it }
             }
         }
     }
