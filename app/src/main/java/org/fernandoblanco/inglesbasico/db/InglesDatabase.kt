@@ -4,37 +4,23 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
-import org.fernandoblanco.inglesbasico.db.dao.UsuarioDao
-import org.fernandoblanco.inglesbasico.db.entity.UsuarioEntity
+import org.fernandoblanco.inglesbasico.db.dao.NinoDao
+import org.fernandoblanco.inglesbasico.db.dao.PadreDao
+import org.fernandoblanco.inglesbasico.db.entity.NinoEntity
+import org.fernandoblanco.inglesbasico.db.entity.PadreEntity
 
 @Database(
-    entities = [UsuarioEntity::class],
-    version = 3,
+    entities = [PadreEntity::class, NinoEntity::class],
+    version = 1,
     exportSchema = false
 )
 abstract class InglesDatabase : RoomDatabase() {
 
-    abstract fun usuarioDao(): UsuarioDao
+    abstract fun padreDao(): PadreDao
+    abstract fun ninoDao(): NinoDao
 
     companion object {
-        private const val NOMBRE_DB = "ingles_basico.db"
-
-        val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE usuarios ADD COLUMN avatarUri TEXT")
-            }
-        }
-
-        val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE usuarios ADD COLUMN rachaActual INTEGER NOT NULL DEFAULT 0")
-                db.execSQL("ALTER TABLE usuarios ADD COLUMN rachaMaxima INTEGER NOT NULL DEFAULT 0")
-                db.execSQL("ALTER TABLE usuarios ADD COLUMN ultimaActividad INTEGER NOT NULL DEFAULT 0")
-                db.execSQL("ALTER TABLE usuarios ADD COLUMN mascotaId TEXT NOT NULL DEFAULT 'zorro'")
-            }
-        }
+        private const val NOMBRE_DB = "ingles_basico_v2.db"
 
         @Volatile
         private var instancia: InglesDatabase? = null
@@ -45,9 +31,7 @@ abstract class InglesDatabase : RoomDatabase() {
                     context.applicationContext,
                     InglesDatabase::class.java,
                     NOMBRE_DB
-                )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-                    .build().also { instancia = it }
+                ).build().also { instancia = it }
             }
         }
     }

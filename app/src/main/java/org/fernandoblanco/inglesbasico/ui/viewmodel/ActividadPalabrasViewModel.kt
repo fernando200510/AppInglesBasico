@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.fernandoblanco.inglesbasico.data.NinoRepository
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
-import org.fernandoblanco.inglesbasico.data.UsuarioRepository
 import org.fernandoblanco.inglesbasico.data.VocabItem
 import org.fernandoblanco.inglesbasico.data.VocabularyBank
 
@@ -23,8 +23,8 @@ data class PreguntaPalabra(
 )
 
 class ActividadPalabrasViewModel(
-    private val repositorio: UsuarioRepository,
-    private val sesionUsuario: SesionUsuario
+    private val repositorio: NinoRepository,
+    private val sesion: SesionUsuario
 ) : ViewModel() {
 
     companion object {
@@ -33,7 +33,6 @@ class ActividadPalabrasViewModel(
     }
 
     private val pool = VocabularyBank.items.filter { it.en.any { ch -> ch.isLetter() } && it.en.length >= 4 }
-
     private var preguntasSesion: List<PreguntaPalabra> = emptyList()
 
     private val _indice = MutableStateFlow(0)
@@ -104,7 +103,7 @@ class ActividadPalabrasViewModel(
             PreguntaPalabra(
                 incompleta = mask,
                 correcta = full,
-                pista = "${item.es}",
+                pista = "${item.emoji} ${item.es}",
                 opciones = opciones
             )
         }
@@ -124,11 +123,12 @@ class ActividadPalabrasViewModel(
         val pregunta = preguntasSesion.getOrNull(idx) ?: return
         _procesando.value = true
         viewModelScope.launch {
-            val id = sesionUsuario.usuarioIdActivo
+            val id = sesion.ninoIdActivo
             if (id == null) { _procesando.value = false; return@launch }
             val ok = palabra.equals(pregunta.correcta, ignoreCase = true)
             _sonido.tryEmit(ok)
-            repositorio.registrarResultadoActividad(id, UsuarioRepository.TipoActividad.PALABRAS, ok)
+            repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.PALABRAS, ok)
+            repositorio.actualizarRacha(id)
             _feedbackOk.value = ok
             _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
             _solucionCorrecta.value = if (ok) null else pregunta.correcta

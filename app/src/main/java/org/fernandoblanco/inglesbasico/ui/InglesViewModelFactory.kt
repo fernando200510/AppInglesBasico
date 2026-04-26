@@ -7,10 +7,11 @@ import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadAudioViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadChatViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadImagenViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadPalabrasViewModel
-import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthViewModel
-import org.fernandoblanco.inglesbasico.ui.viewmodel.PerfilViewModel
-import org.fernandoblanco.inglesbasico.ui.viewmodel.ReportesViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadVocabularioViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthPadreViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.NinoPerfilViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.ReportesViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.SelectorPerfilViewModel
 
 @Suppress("UNCHECKED_CAST")
 class InglesViewModelFactory(
@@ -18,25 +19,28 @@ class InglesViewModelFactory(
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        val repo = app.repositorioUsuario
+        val repoPadre = app.repositorioPadre
+        val repoNino = app.repositorioNino
         val sesion = app.sesion
         return when {
-            modelClass.isAssignableFrom(AuthViewModel::class.java) ->
-                AuthViewModel(repo, sesion) as T
-            modelClass.isAssignableFrom(PerfilViewModel::class.java) ->
-                PerfilViewModel(repo, sesion) as T
+            modelClass.isAssignableFrom(AuthPadreViewModel::class.java) ->
+                AuthPadreViewModel(repoPadre, sesion) as T
+            modelClass.isAssignableFrom(SelectorPerfilViewModel::class.java) ->
+                SelectorPerfilViewModel(repoPadre, repoNino, sesion) as T
+            modelClass.isAssignableFrom(NinoPerfilViewModel::class.java) ->
+                NinoPerfilViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ReportesViewModel::class.java) ->
-                ReportesViewModel(repo, sesion) as T
+                ReportesViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadImagenViewModel::class.java) ->
-                ActividadImagenViewModel(repo, sesion) as T
+                ActividadImagenViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadAudioViewModel::class.java) ->
-                ActividadAudioViewModel(app, repo, sesion) as T
+                ActividadAudioViewModel(app, repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadPalabrasViewModel::class.java) ->
-                ActividadPalabrasViewModel(repo, sesion) as T
-            modelClass.isAssignableFrom(ActividadChatViewModel::class.java) ->
-                ActividadChatViewModel(repo, sesion) as T
+                ActividadPalabrasViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadVocabularioViewModel::class.java) ->
                 ActividadVocabularioViewModel(sesion) as T
+            modelClass.isAssignableFrom(ActividadChatViewModel::class.java) ->
+                ActividadChatViewModel(repoNino, sesion) as T
             else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
         }
     }

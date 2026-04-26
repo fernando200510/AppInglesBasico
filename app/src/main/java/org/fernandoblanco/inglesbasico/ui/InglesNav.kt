@@ -1,9 +1,5 @@
 package org.fernandoblanco.inglesbasico.ui
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -13,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -29,12 +26,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,7 +66,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -76,13 +76,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import kotlinx.coroutines.launch
 import org.fernandoblanco.inglesbasico.InglesApp
 import org.fernandoblanco.inglesbasico.data.CompaneroData
-import org.fernandoblanco.inglesbasico.db.entity.UsuarioEntity
-import org.fernandoblanco.inglesbasico.ui.design.LoginEntrance
+import org.fernandoblanco.inglesbasico.db.entity.NinoEntity
 import org.fernandoblanco.inglesbasico.ui.design.PlayOutlineButton
 import org.fernandoblanco.inglesbasico.ui.design.PlayScreenGradient
 import org.fernandoblanco.inglesbasico.ui.design.PlaySolidButton
@@ -95,40 +92,43 @@ import org.fernandoblanco.inglesbasico.ui.kid.KidGameBackground
 import org.fernandoblanco.inglesbasico.ui.kid.KidListenButton
 import org.fernandoblanco.inglesbasico.ui.kid.KidOptionButton
 import org.fernandoblanco.inglesbasico.ui.kid.KidSessionProgress
-import org.fernandoblanco.inglesbasico.ui.kid.avatarEmojiParaUsuario
-import org.fernandoblanco.inglesbasico.ui.theme.PlayBlue
-import org.fernandoblanco.inglesbasico.ui.theme.PlayBlueDark
+import org.fernandoblanco.inglesbasico.ui.theme.Amarillo
+import org.fernandoblanco.inglesbasico.ui.theme.AmarilloSuave
+import org.fernandoblanco.inglesbasico.ui.theme.Azul
+import org.fernandoblanco.inglesbasico.ui.theme.Morado
+import org.fernandoblanco.inglesbasico.ui.theme.MoradoSuave
+import org.fernandoblanco.inglesbasico.ui.theme.Naranja
+import org.fernandoblanco.inglesbasico.ui.theme.NaranjaOscuro
 import org.fernandoblanco.inglesbasico.ui.theme.PlayError
-import org.fernandoblanco.inglesbasico.ui.theme.PlayGreen
-import org.fernandoblanco.inglesbasico.ui.theme.PlayInk
-import org.fernandoblanco.inglesbasico.ui.theme.PlayPurple
-import org.fernandoblanco.inglesbasico.ui.theme.PlayPurpleSoft
-import org.fernandoblanco.inglesbasico.ui.theme.PlaySurface
-import org.fernandoblanco.inglesbasico.ui.theme.PlayYellow
-import org.fernandoblanco.inglesbasico.ui.theme.PlayYellowSoft
+import org.fernandoblanco.inglesbasico.ui.theme.Rosa
+import org.fernandoblanco.inglesbasico.ui.theme.Verde
+import org.fernandoblanco.inglesbasico.ui.theme.VerdeSuave
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadAudioViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadChatViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadImagenViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadPalabrasViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadVocabularioViewModel
-import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthViewModel
-import org.fernandoblanco.inglesbasico.ui.viewmodel.PerfilViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthPadreViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.NinoPerfilViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ReportesViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.SelectorPerfilViewModel
 
 object Rutas {
     const val SPLASH = "splash"
     const val LOGIN = "login"
     const val REGISTRO = "registro"
+    const val SELECTOR_PERFIL = "selector_perfil"
+    const val CREAR_NINO = "crear_nino"
     const val INICIO = "inicio"
-    const val PERFIL = "perfil"
     const val ACTIVIDADES = "actividades"
     const val ACT_IMAGEN = "act_imagen"
     const val ACT_AUDIO = "act_audio"
     const val ACT_PALABRAS = "act_palabras"
-    const val REPORTES = "reportes"
-    const val ACT_CHAT = "act_chat"
-    const val SELECTOR_MASCOTA = "selector_mascota"
     const val ACT_VOCABULARIO = "act_vocabulario"
+    const val ACT_CHAT = "act_chat"
+    const val REPORTES = "reportes"
+    const val SELECTOR_MASCOTA = "selector_mascota"
+    const val SALIR_NINO = "salir_nino"
 }
 
 @Composable
@@ -147,35 +147,40 @@ fun InglesAppRoot() {
         composable(Rutas.SPLASH) { PantallaSplash(app = app, nav = nav) }
         composable(Rutas.LOGIN) { PantallaLogin(factory = factory, nav = nav) }
         composable(Rutas.REGISTRO) { PantallaRegistro(factory = factory, nav = nav) }
-        composable(Rutas.INICIO) { PantallaInicio(app = app, nav = nav, factory = factory) }
-        composable(Rutas.PERFIL) { PantallaPerfil(factory = factory, nav = nav) }
-        composable(Rutas.ACTIVIDADES) { PantallaListaActividades(nav = nav, factory = factory) }
+        composable(Rutas.SELECTOR_PERFIL) { PantallaSelectorPerfil(factory = factory, nav = nav) }
+        composable(Rutas.CREAR_NINO) { PantallaCrearNino(factory = factory, nav = nav) }
+        composable(Rutas.INICIO) { PantallaInicio(nav = nav, factory = factory) }
+        composable(Rutas.ACTIVIDADES) { PantallaListaActividades(nav = nav) }
         composable(Rutas.ACT_IMAGEN) { PantallaActividadImagen(factory = factory, nav = nav) }
         composable(Rutas.ACT_AUDIO) { PantallaActividadAudio(factory = factory, nav = nav) }
         composable(Rutas.ACT_PALABRAS) { PantallaActividadPalabras(factory = factory, nav = nav) }
-        composable(Rutas.REPORTES) { PantallaReportes(factory = factory, nav = nav) }
-        composable(Rutas.ACT_CHAT) { PantallaActividadChat(factory = factory, nav = nav) }
-        composable(Rutas.SELECTOR_MASCOTA) { PantallaSelectorMascota(factory = factory, nav = nav) }
         composable(Rutas.ACT_VOCABULARIO) { PantallaActividadVocabulario(factory = factory, nav = nav) }
+        composable(Rutas.ACT_CHAT) { PantallaActividadChat(factory = factory, nav = nav) }
+        composable(Rutas.REPORTES) { PantallaReportes(factory = factory, nav = nav) }
+        composable(Rutas.SELECTOR_MASCOTA) { PantallaSelectorMascota(factory = factory, nav = nav) }
+        composable(Rutas.SALIR_NINO) { PantallaSalirNino(factory = factory, nav = nav) }
     }
 }
 
 @Composable
 private fun PantallaSplash(app: InglesApp, nav: NavHostController) {
     LaunchedEffect(Unit) {
-        if (app.sesion.usuarioIdActivo != null) {
-            nav.navigate(Rutas.INICIO) { popUpTo(Rutas.SPLASH) { inclusive = true } }
-        } else {
-            nav.navigate(Rutas.LOGIN) { popUpTo(Rutas.SPLASH) { inclusive = true } }
+        when {
+            app.sesion.padreIdActivo == null ->
+                nav.navigate(Rutas.LOGIN) { popUpTo(Rutas.SPLASH) { inclusive = true } }
+            app.sesion.ninoIdActivo == null ->
+                nav.navigate(Rutas.SELECTOR_PERFIL) { popUpTo(Rutas.SPLASH) { inclusive = true } }
+            else ->
+                nav.navigate(Rutas.INICIO) { popUpTo(Rutas.SPLASH) { inclusive = true } }
         }
     }
     KidGameBackground {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Text("📚", style = MaterialTheme.typography.displayLarge)
             Spacer(Modifier.height(12.dp))
-            Text("Inglés Divertido", style = MaterialTheme.typography.headlineMedium, color = PlayPurple, fontWeight = FontWeight.Bold)
+            Text("Inglés Divertido", style = MaterialTheme.typography.headlineMedium, color = Naranja, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(20.dp))
-            CircularProgressIndicator(color = PlayBlue, strokeWidth = 3.dp)
+            CircularProgressIndicator(color = Naranja, strokeWidth = 3.dp)
         }
     }
 }
@@ -183,7 +188,7 @@ private fun PantallaSplash(app: InglesApp, nav: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PantallaLogin(factory: InglesViewModelFactory, nav: NavHostController) {
-    val vm: AuthViewModel = viewModel(factory = factory)
+    val vm: AuthPadreViewModel = viewModel(factory = factory)
     val mensaje by vm.mensaje.collectAsState()
     val cargando by vm.cargando.collectAsState()
     val snack = remember { SnackbarHostState() }
@@ -195,22 +200,30 @@ private fun PantallaLogin(factory: InglesViewModelFactory, nav: NavHostControlle
 
     Scaffold(snackbarHost = { SnackbarHost(snack) }, containerColor = Color.Transparent) { pad ->
         PlayScreenGradient(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxSize().padding(pad)) {
-                LoginEntrance {
-                    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                        Spacer(Modifier.height(8.dp))
-                        Box(modifier = Modifier.size(120.dp).shadow(16.dp, CircleShape, spotColor = PlayBlue.copy(0.25f)).clip(CircleShape).background(PlaySurface), contentAlignment = Alignment.Center) {
-                            Text("🦊", style = MaterialTheme.typography.displayLarge)
-                        }
-                        Text("¡Hola, pequeño explorador!", style = MaterialTheme.typography.headlineMedium, color = PlayInk, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
-                        Text("Entra para seguir aprendiendo inglés", style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.72f), textAlign = TextAlign.Center)
-                        OutlinedTextField(value = usuario, onValueChange = { usuario = it }, label = { Text("Tu usuario") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
-                        OutlinedTextField(value = contrasena, onValueChange = { contrasena = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
-                        Spacer(Modifier.height(4.dp))
-                        PlaySolidButton(text = "Entrar", onClick = { vm.iniciarSesion(usuario, contrasena) { nav.navigate(Rutas.INICIO) { popUpTo(Rutas.LOGIN) { inclusive = true } } } }, enabled = !cargando, loading = cargando, containerColor = PlayBlue)
-                        PlayOutlineButton(text = "Crear cuenta nueva", onClick = { nav.navigate(Rutas.REGISTRO) }, borderColor = PlayPurple)
-                    }
-                }
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(pad).padding(horizontal = 28.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Spacer(Modifier.height(24.dp))
+                Box(
+                    modifier = Modifier.size(110.dp).shadow(20.dp, CircleShape, spotColor = Naranja.copy(0.4f)).clip(CircleShape)
+                        .background(Brush.radialGradient(listOf(Amarillo, Naranja))),
+                    contentAlignment = Alignment.Center
+                ) { Text("📚", style = MaterialTheme.typography.displayMedium) }
+                Text("¡Bienvenido!", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text("Ingresa con tu cuenta de padre/tutor", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(value = usuario, onValueChange = { usuario = it }, label = { Text("Usuario") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(16.dp), colors = playTextFieldColors())
+                OutlinedTextField(value = contrasena, onValueChange = { contrasena = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(16.dp), colors = playTextFieldColors())
+                PlaySolidButton(
+                    text = "Entrar",
+                    onClick = { vm.iniciarSesion(usuario, contrasena) { nav.navigate(Rutas.SELECTOR_PERFIL) { popUpTo(Rutas.LOGIN) { inclusive = true } } } },
+                    enabled = !cargando,
+                    loading = cargando,
+                    containerColor = Naranja
+                )
+                PlayOutlineButton(text = "Crear cuenta nueva", onClick = { nav.navigate(Rutas.REGISTRO) }, borderColor = Morado)
             }
         }
     }
@@ -219,7 +232,7 @@ private fun PantallaLogin(factory: InglesViewModelFactory, nav: NavHostControlle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PantallaRegistro(factory: InglesViewModelFactory, nav: NavHostController) {
-    val vm: AuthViewModel = viewModel(factory = factory)
+    val vm: AuthPadreViewModel = viewModel(factory = factory)
     val mensaje by vm.mensaje.collectAsState()
     val cargando by vm.cargando.collectAsState()
     val snack = remember { SnackbarHostState() }
@@ -230,21 +243,31 @@ private fun PantallaRegistro(factory: InglesViewModelFactory, nav: NavHostContro
 
     LaunchedEffect(mensaje) { mensaje?.let { scope.launch { snack.showSnackbar(it) }; vm.limpiarMensaje() } }
 
-    Scaffold(snackbarHost = { SnackbarHost(snack) }, containerColor = Color.Transparent,
+    Scaffold(
+        snackbarHost = { SnackbarHost(snack) },
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("Nueva cuenta", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent))
+            TopAppBar(
+                title = { Text("Nueva cuenta", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
         }
     ) { pad ->
         PlayScreenGradient(Modifier.fillMaxSize()) {
             Column(modifier = Modifier.padding(pad).padding(24.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Crea tu usuario y empieza la aventura", style = MaterialTheme.typography.titleMedium, color = PlayInk.copy(alpha = 0.8f))
-                OutlinedTextField(value = usuario, onValueChange = { usuario = it }, label = { Text("Usuario (único)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
-                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Cómo te llamamos") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
-                OutlinedTextField(value = contrasena, onValueChange = { contrasena = it }, label = { Text("Contraseña (mín. 4)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
+                Text("Crea tu cuenta de padre/tutor", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedTextField(value = usuario, onValueChange = { usuario = it }, label = { Text("Usuario (único)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(16.dp), colors = playTextFieldColors())
+                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Tu nombre") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(16.dp), colors = playTextFieldColors())
+                OutlinedTextField(value = contrasena, onValueChange = { contrasena = it }, label = { Text("Contraseña (mín. 4)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(16.dp), colors = playTextFieldColors())
                 Spacer(Modifier.height(8.dp))
-                PlaySolidButton(text = "¡Listo, a jugar!", onClick = { vm.registrar(usuario, nombre, contrasena) { nav.navigate(Rutas.INICIO) { popUpTo(Rutas.LOGIN) { inclusive = true } } } }, enabled = !cargando, loading = cargando, containerColor = PlayPurple)
+                PlaySolidButton(
+                    text = "Crear cuenta",
+                    onClick = { vm.registrar(usuario, nombre, contrasena) { nav.navigate(Rutas.SELECTOR_PERFIL) { popUpTo(Rutas.LOGIN) { inclusive = true } } } },
+                    enabled = !cargando,
+                    loading = cargando,
+                    containerColor = Morado
+                )
             }
         }
     }
@@ -252,18 +275,184 @@ private fun PantallaRegistro(factory: InglesViewModelFactory, nav: NavHostContro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PantallaInicio(app: InglesApp, nav: NavHostController, factory: InglesViewModelFactory) {
-    val perfilVm: PerfilViewModel = viewModel(factory = factory)
-    val perfil by perfilVm.perfil.collectAsState()
-    val uid = app.sesion.usuarioIdActivo ?: 0L
-    val emoji = avatarEmojiParaUsuario(uid)
+private fun PantallaSelectorPerfil(factory: InglesViewModelFactory, nav: NavHostController) {
+    val vm: SelectorPerfilViewModel = viewModel(factory = factory)
+    val padre by vm.padre.collectAsState()
+    val ninos by vm.ninos.collectAsState()
+    val mensaje by vm.mensaje.collectAsState()
+    val snack = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var mostrarEliminarId by remember { mutableStateOf<Long?>(null) }
 
-    Scaffold(containerColor = Color.Transparent,
+    LaunchedEffect(mensaje) { mensaje?.let { scope.launch { snack.showSnackbar(it) }; vm.limpiarMensaje() } }
+
+    mostrarEliminarId?.let { id ->
+        AlertDialog(
+            onDismissRequest = { mostrarEliminarId = null },
+            title = { Text("Eliminar perfil") },
+            text = { Text("¿Eliminar este perfil? Se perderá todo su progreso.") },
+            confirmButton = { TextButton(onClick = { vm.eliminarNino(id); mostrarEliminarId = null }) { Text("Eliminar", color = PlayError) } },
+            dismissButton = { TextButton(onClick = { mostrarEliminarId = null }) { Text("Cancelar") } }
+        )
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snack) },
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Column { Text("¡Hola${perfil?.nombreMostrar?.let { ", $it" } ?: ""}!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PlayInk); Text("¿Qué hacemos hoy?", style = MaterialTheme.typography.bodyMedium, color = PlayInk.copy(alpha = 0.65f)) } },
-                actions = { IconButton(onClick = { nav.navigate(Rutas.PERFIL) }, modifier = Modifier.padding(end = 4.dp)) { PerfilIconoMini(uri = perfil?.avatarUri?.let { Uri.parse(it) }, emoji = emoji) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface.copy(alpha = 0.92f), titleContentColor = PlayInk, actionIconContentColor = PlayInk)
+                title = { Text("¡Hola${padre?.nombreMostrar?.let { ", $it" } ?: ""}!", fontWeight = FontWeight.Bold) },
+                actions = {
+                    TextButton(onClick = { vm.cerrarSesionCompleta { nav.navigate(Rutas.LOGIN) { popUpTo(0) { inclusive = true } } } }) {
+                        Text("Salir", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+            )
+        }
+    ) { pad ->
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.padding(pad).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(Modifier.height(16.dp))
+                Text("¿Quién va a jugar hoy?", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
+                Text("Toca tu nombre para entrar", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(24.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(ninos) { nino ->
+                        TarjetaNino(
+                            nino = nino,
+                            onClick = { vm.seleccionarNino(nino.id) { nav.navigate(Rutas.INICIO) { popUpTo(Rutas.SELECTOR_PERFIL) { inclusive = true } } } },
+                            onLongClick = { mostrarEliminarId = nino.id }
+                        )
+                    }
+                    if (ninos.size < 6) {
+                        item { TarjetaAgregarNino(onClick = { nav.navigate(Rutas.CREAR_NINO) }) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaNino(nino: NinoEntity, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val shape = RoundedCornerShape(24.dp)
+    val colores = listOf(Naranja to AmarilloSuave, Morado to MoradoSuave, Azul to Color(0xFFE0F4FF), Verde to VerdeSuave, Rosa to Color(0xFFFFE8F3))
+    val (acento, fondo) = colores[nino.id.toInt() % colores.size]
+    Box(
+        modifier = Modifier.fillMaxWidth().height(160.dp).shadow(12.dp, shape, spotColor = acento.copy(0.3f)).clip(shape).background(fondo).clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier.size(72.dp).shadow(8.dp, CircleShape, spotColor = acento.copy(0.4f)).clip(CircleShape).background(acento.copy(0.15f)).border(2.dp, acento.copy(0.4f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) { Text(nino.avatarEmoji, style = MaterialTheme.typography.headlineMedium) }
+            Text(nino.nombreMostrar, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = acento, textAlign = TextAlign.Center)
+            Text("Nivel ${nino.nivel} · ⭐ ${nino.puntajeTotal}pts", style = MaterialTheme.typography.labelMedium, color = acento.copy(0.7f))
+        }
+    }
+}
+
+@Composable
+private fun TarjetaAgregarNino(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        modifier = Modifier.fillMaxWidth().height(160.dp).shadow(8.dp, shape).clip(shape).background(MaterialTheme.colorScheme.surfaceVariant.copy(0.6f)).border(2.dp, MaterialTheme.colorScheme.outline.copy(0.3f), shape).clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(0.15f)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+            }
+            Text("Agregar niño", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PantallaCrearNino(factory: InglesViewModelFactory, nav: NavHostController) {
+    val vm: SelectorPerfilViewModel = viewModel(factory = factory)
+    val mensaje by vm.mensaje.collectAsState()
+    val cargando by vm.cargando.collectAsState()
+    val snack = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var nombre by remember { mutableStateOf("") }
+    var emojiSeleccionado by remember { mutableStateOf("🐱") }
+    val emojis = listOf("🐱", "🐶", "🐰", "🦊", "🐸", "🐯", "🐼", "🐨", "🦁", "🐻", "🐲", "🦄", "🐧", "🦋", "🐬")
+
+    LaunchedEffect(mensaje) { mensaje?.let { scope.launch { snack.showSnackbar(it) }; vm.limpiarMensaje() } }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snack) },
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text("Nuevo perfil", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
+    ) { pad ->
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.padding(pad).padding(24.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Elige un avatar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Box(modifier = Modifier.size(96.dp).shadow(16.dp, CircleShape, spotColor = Naranja.copy(0.4f)).clip(CircleShape).background(AmarilloSuave), contentAlignment = Alignment.Center) {
+                    Text(emojiSeleccionado, style = MaterialTheme.typography.displayMedium)
+                }
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(5),
+                    modifier = Modifier.fillMaxWidth().height(160.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(emojis) { emoji ->
+                        Box(
+                            modifier = Modifier.size(52.dp).clip(CircleShape)
+                                .background(if (emoji == emojiSeleccionado) Naranja.copy(0.2f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .border(if (emoji == emojiSeleccionado) 2.dp else 0.dp, Naranja, CircleShape)
+                                .clickable { emojiSeleccionado = emoji },
+                            contentAlignment = Alignment.Center
+                        ) { Text(emoji, style = MaterialTheme.typography.titleLarge) }
+                    }
+                }
+                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre del niño") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(16.dp), colors = playTextFieldColors())
+                PlaySolidButton(text = "Crear perfil", onClick = { vm.crearNino(nombre, emojiSeleccionado) { nav.popBackStack() } }, enabled = !cargando && nombre.isNotBlank(), loading = cargando, containerColor = Verde)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PantallaInicio(nav: NavHostController, factory: InglesViewModelFactory) {
+    val vm: NinoPerfilViewModel = viewModel(factory = factory)
+    val perfil by vm.perfil.collectAsState()
+
+    Scaffold(
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("¡Hola${perfil?.nombreMostrar?.let { ", $it" } ?: ""}!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("¿Qué hacemos hoy?", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                actions = {
+                    Box(
+                        modifier = Modifier.size(44.dp).padding(end = 8.dp).clip(CircleShape).background(Naranja.copy(0.15f)).clickable { nav.navigate(Rutas.SALIR_NINO) },
+                        contentAlignment = Alignment.Center
+                    ) { Text(perfil?.avatarEmoji ?: "🐱", style = MaterialTheme.typography.titleLarge) }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
             )
         }
     ) { pad ->
@@ -272,72 +461,103 @@ private fun PantallaInicio(app: InglesApp, nav: NavHostController, factory: Ingl
                 perfil?.let { p ->
                     if (p.rachaActual > 0) {
                         val shape = RoundedCornerShape(20.dp)
-                        Box(modifier = Modifier.fillMaxWidth().shadow(10.dp, shape, spotColor = PlayYellow.copy(0.3f)).clip(shape).background(PlayYellowSoft).padding(16.dp)) {
+                        Box(modifier = Modifier.fillMaxWidth().shadow(10.dp, shape, spotColor = Amarillo.copy(0.4f)).clip(shape).background(AmarilloSuave).padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text("🔥", style = MaterialTheme.typography.headlineMedium)
                                 Column {
-                                    Text("¡${p.rachaActual} días seguidos!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PlayInk)
-                                    Text("Récord: ${p.rachaMaxima} días · ¡No pierdas tu racha!", style = MaterialTheme.typography.bodyMedium, color = PlayInk.copy(alpha = 0.7f))
+                                    Text("¡${p.rachaActual} días seguidos!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = NaranjaOscuro)
+                                    Text("Récord: ${p.rachaMaxima} días · ¡No pierdas tu racha!", style = MaterialTheme.typography.bodySmall, color = NaranjaOscuro.copy(0.8f))
                                 }
                             }
                         }
                     }
-                }
-                perfil?.let { p ->
                     val companero = CompaneroData.obtenerPorId(p.mascotaId)
                     val shape = RoundedCornerShape(20.dp)
-                    Box(modifier = Modifier.fillMaxWidth().shadow(10.dp, shape, spotColor = PlayPurple.copy(0.2f)).clip(shape).background(PlaySurface).padding(16.dp)) {
+                    Box(modifier = Modifier.fillMaxWidth().shadow(10.dp, shape, spotColor = Morado.copy(0.2f)).clip(shape).background(MoradoSuave).padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(companero.emoji, style = MaterialTheme.typography.headlineLarge)
                             Column {
-                                Text(companero.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PlayInk)
-                                Text(companero.frasesInicio.random(), style = MaterialTheme.typography.bodyMedium, color = PlayInk.copy(alpha = 0.7f))
+                                Text(companero.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Morado)
+                                Text(companero.frasesInicio.random(), style = MaterialTheme.typography.bodySmall, color = Morado.copy(0.8f))
                             }
                         }
                     }
                 }
-                PlayNavCard(emoji = "🎮", titulo = "Actividades", subtitulo = "Imagen, audio y palabras — 10 preguntas", accentStart = PlayBlue, accentEnd = PlayPurple, nivel = null, onClick = { nav.navigate(Rutas.ACTIVIDADES) })
-                PlayNavCard(emoji = "📊", titulo = "Reportes", subtitulo = "Tu progreso y logros", accentStart = PlayYellow, accentEnd = PlayGreen, nivel = null, onClick = { nav.navigate(Rutas.REPORTES) })
-                Spacer(Modifier.height(4.dp))
-                PlayOutlineButton(text = "Cambiar compañero de aventura", onClick = { nav.navigate(Rutas.SELECTOR_MASCOTA) }, borderColor = PlayPurple)
-                PlayOutlineButton(text = "Cerrar sesión", onClick = { app.sesion.cerrarSesion(); nav.navigate(Rutas.LOGIN) { popUpTo(0) { inclusive = true } } }, borderColor = PlayInk.copy(alpha = 0.35f))
+                PlayNavCard(emoji = "🎮", titulo = "Actividades", subtitulo = "Imagen, audio y palabras", accentStart = Naranja, accentEnd = Rosa, onClick = { nav.navigate(Rutas.ACTIVIDADES) })
+                PlayNavCard(emoji = "📊", titulo = "Reportes", subtitulo = "Tu progreso y logros", accentStart = Azul, accentEnd = Verde, onClick = { nav.navigate(Rutas.REPORTES) })
+                PlayOutlineButton(text = "Cambiar compañero de aventura", onClick = { nav.navigate(Rutas.SELECTOR_MASCOTA) }, borderColor = Morado)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PantallaSalirNino(factory: InglesViewModelFactory, nav: NavHostController) {
+    val vm: SelectorPerfilViewModel = viewModel(factory = factory)
+    val mensaje by vm.mensaje.collectAsState()
+    val verificando by vm.verificandoPin.collectAsState()
+    val snack = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var contrasena by remember { mutableStateOf("") }
+
+    LaunchedEffect(mensaje) { mensaje?.let { scope.launch { snack.showSnackbar(it) }; vm.limpiarMensaje() } }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snack) },
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text("Control parental", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
+    ) { pad ->
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.padding(pad).fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Box(modifier = Modifier.size(96.dp).shadow(16.dp, CircleShape, spotColor = Morado.copy(0.4f)).clip(CircleShape).background(MoradoSuave), contentAlignment = Alignment.Center) {
+                    Text("🔒", style = MaterialTheme.typography.displaySmall)
+                }
+                Spacer(Modifier.height(24.dp))
+                Text("¿Salir del perfil?", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
+                Text("Pide a tu papá o mamá que ingrese la contraseña para continuar", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(28.dp))
+                OutlinedTextField(value = contrasena, onValueChange = { contrasena = it }, label = { Text("Contraseña del padre/tutor") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(16.dp), colors = playTextFieldColors())
+                Spacer(Modifier.height(16.dp))
+                PlaySolidButton(
+                    text = "Confirmar y salir",
+                    onClick = { vm.verificarContrasenaParaSalir(contrasena) { nav.navigate(Rutas.SELECTOR_PERFIL) { popUpTo(0) { inclusive = true } } } },
+                    enabled = !verificando && contrasena.isNotBlank(),
+                    loading = verificando,
+                    containerColor = Morado
+                )
             }
         }
     }
 }
 
 @Composable
-private fun PerfilIconoMini(uri: Uri?, emoji: String) {
-    Box(modifier = Modifier.size(48.dp).shadow(10.dp, CircleShape, spotColor = PlayPurple.copy(0.35f)).clip(CircleShape).background(PlayYellowSoft), contentAlignment = Alignment.Center) {
-        if (uri != null) {
-            val ctx = LocalContext.current
-            AsyncImage(model = ImageRequest.Builder(ctx).data(uri).crossfade(true).build(), contentDescription = "Perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        } else {
-            Text(emoji, style = MaterialTheme.typography.headlineSmall)
-        }
-    }
-}
-
-@Composable
-private fun PlayNavCard(emoji: String, titulo: String, subtitulo: String, accentStart: Color, accentEnd: Color, nivel: Int?, onClick: () -> Unit) {
+private fun PlayNavCard(emoji: String, titulo: String, subtitulo: String, accentStart: Color, accentEnd: Color, nivel: Int? = null, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (pressed) 0.97f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), label = "navCard")
     val shape = RoundedCornerShape(28.dp)
-    Box(modifier = Modifier.fillMaxWidth().scale(scale).shadow(elevation = 20.dp, shape = shape, ambientColor = accentStart.copy(alpha = 0.22f), spotColor = accentStart.copy(alpha = 0.32f)).clip(shape).background(PlaySurface).clickable(interactionSource = interaction, indication = null) { onClick() }) {
+    Box(modifier = Modifier.fillMaxWidth().scale(scale).shadow(16.dp, shape, spotColor = accentStart.copy(0.3f)).clip(shape).background(MaterialTheme.colorScheme.surface).clickable(interactionSource = interaction, indication = null) { onClick() }) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            Box(Modifier.width(12.dp).fillMaxHeight().background(Brush.verticalGradient(colors = listOf(accentStart, accentEnd))))
-            Column(Modifier.padding(horizontal = 18.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.width(10.dp).fillMaxHeight().background(Brush.verticalGradient(colors = listOf(accentStart, accentEnd))))
+            Column(Modifier.padding(horizontal = 18.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (nivel != null) {
-                    Box(Modifier.clip(RoundedCornerShape(14.dp)).background(accentStart.copy(alpha = 0.16f)).padding(horizontal = 12.dp, vertical = 5.dp)) {
-                        Text("Nivel $nivel", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = accentStart)
+                    Box(Modifier.clip(RoundedCornerShape(10.dp)).background(accentStart.copy(0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                        Text("Nivel $nivel", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = accentStart)
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(emoji, style = MaterialTheme.typography.displaySmall)
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(titulo, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PlayInk)
-                        Text(subtitulo, style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.68f))
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(titulo, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(subtitulo, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -347,76 +567,25 @@ private fun PlayNavCard(emoji: String, titulo: String, subtitulo: String, accent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PantallaPerfil(factory: InglesViewModelFactory, nav: NavHostController) {
-    val vm: PerfilViewModel = viewModel(factory = factory)
-    val perfil by vm.perfil.collectAsState()
-    val nombre by vm.nombreMostrar.collectAsState()
-    val usuario by vm.usuario.collectAsState()
-    val mensaje by vm.mensaje.collectAsState()
-    val snack = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    var nuevaContrasena by remember { mutableStateOf("") }
-    var mostrarEliminar by remember { mutableStateOf(false) }
-    val ctx = LocalContext.current
-    val pick = rememberLauncherForActivityResult(PickVisualMedia()) { uri: Uri? -> vm.guardarAvatar(uri) { scope.launch { snack.showSnackbar("¡Foto guardada!") } } }
-
-    LaunchedEffect(mensaje) { mensaje?.let { scope.launch { snack.showSnackbar(it) }; vm.limpiarMensaje() } }
-
-    if (mostrarEliminar) {
-        AlertDialog(onDismissRequest = { mostrarEliminar = false },
-            title = { Text("Eliminar perfil") },
-            text = { Text("Se borrarán tus datos en este dispositivo. ¿Seguro?") },
-            confirmButton = { TextButton(onClick = { mostrarEliminar = false; vm.eliminarCuenta { nav.navigate(Rutas.LOGIN) { popUpTo(0) { inclusive = true } } } }) { Text("Eliminar") } },
-            dismissButton = { TextButton(onClick = { mostrarEliminar = false }) { Text("Cancelar") } }
-        )
-    }
-
-    Scaffold(snackbarHost = { SnackbarHost(snack) }, containerColor = Color.Transparent,
+private fun PantallaListaActividades(nav: NavHostController) {
+    Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("Mi perfil", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface.copy(alpha = 0.94f)))
+            TopAppBar(
+                title = { Text("Actividades", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+            )
         }
     ) { pad ->
         PlayScreenGradient(Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(pad).padding(24.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                val uid = perfil?.id ?: 0L
-                val emoji = avatarEmojiParaUsuario(uid)
-                Box(modifier = Modifier.size(128.dp).shadow(16.dp, CircleShape, spotColor = PlayBlue.copy(0.35f)).clip(CircleShape).background(PlayPurpleSoft).clickable { pick.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
-                    val u = perfil?.avatarUri?.let { Uri.parse(it) }
-                    if (u != null) AsyncImage(model = ImageRequest.Builder(ctx).data(u).crossfade(true).build(), contentDescription = "Avatar", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    else Text(emoji, style = MaterialTheme.typography.displayLarge)
-                }
-                Text("Toca para cambiar tu foto", style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.65f), textAlign = TextAlign.Center)
-                PlayOutlineButton(text = "Avatar divertido al azar", onClick = { vm.quitarAvatar { scope.launch { snack.showSnackbar("¡Listo!") } } }, borderColor = PlayPurple)
-                OutlinedTextField(value = usuario, onValueChange = {}, readOnly = true, label = { Text("Usuario") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
-                OutlinedTextField(value = nombre, onValueChange = { vm.setNombreMostrar(it) }, label = { Text("Nombre para mostrar") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
-                OutlinedTextField(value = nuevaContrasena, onValueChange = { nuevaContrasena = it }, label = { Text("Nueva contraseña (opcional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(22.dp), colors = playTextFieldColors())
-                PlaySolidButton(text = "Guardar cambios", onClick = { val pwd = nuevaContrasena.takeIf { it.isNotBlank() }; vm.guardar(pwd) { scope.launch { snack.showSnackbar("¡Perfil actualizado!") }; nuevaContrasena = "" } }, containerColor = PlayGreen)
-                PlayOutlineButton(text = "Eliminar perfil", onClick = { mostrarEliminar = true }, borderColor = PlayError, textColor = PlayError)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PantallaListaActividades(nav: NavHostController, factory: InglesViewModelFactory) {
-    Scaffold(containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(title = { Text("Tus niveles", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface.copy(alpha = 0.94f)))
-        }
-    ) { pad ->
-        PlayScreenGradient(Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(pad).padding(20.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                Text("Estudia primero, luego juega 🎓", style = MaterialTheme.typography.titleMedium, color = PlayInk.copy(alpha = 0.72f), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                PlayNavCard(emoji = "📖", titulo = "Aprende palabras", subtitulo = "Estudia con tarjetas antes de jugar", accentStart = PlayYellow, accentEnd = PlayGreen, nivel = null, onClick = { nav.navigate(Rutas.ACT_VOCABULARIO) })
-                PlayNavCard(emoji = "🖼️", titulo = "Juego de imágenes", subtitulo = "Mira el emoji y elige en inglés", accentStart = PlayBlue, accentEnd = PlayBlueDark, nivel = 1, onClick = { nav.navigate(Rutas.ACT_IMAGEN) })
-                PlayNavCard(emoji = "👂", titulo = "Juego de audio", subtitulo = "Escucha y elige la respuesta", accentStart = PlayPurple, accentEnd = PlayYellow, nivel = 2, onClick = { nav.navigate(Rutas.ACT_AUDIO) })
-                PlayNavCard(emoji = "✏️", titulo = "Completar palabras", subtitulo = "Completa la palabra en inglés", accentStart = PlayGreen, accentEnd = PlayBlue, nivel = 3, onClick = { nav.navigate(Rutas.ACT_PALABRAS) })
-                PlayNavCard(emoji = "🤖", titulo = "Chat con el Tutor IA", subtitulo = "Conversa y aprende con tu compañero", accentStart = PlayPurple, accentEnd = PlayGreen, nivel = 4, onClick = { nav.navigate(Rutas.ACT_CHAT) })
+            Column(modifier = Modifier.padding(pad).padding(20.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Estudia primero, luego juega 🎓", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                PlayNavCard(emoji = "📖", titulo = "Aprende palabras", subtitulo = "Estudia con tarjetas antes de jugar", accentStart = Amarillo, accentEnd = Verde, onClick = { nav.navigate(Rutas.ACT_VOCABULARIO) })
+                PlayNavCard(emoji = "🖼️", titulo = "Juego de imágenes", subtitulo = "Mira el emoji y elige en inglés", accentStart = Naranja, accentEnd = NaranjaOscuro, nivel = 1, onClick = { nav.navigate(Rutas.ACT_IMAGEN) })
+                PlayNavCard(emoji = "👂", titulo = "Juego de audio", subtitulo = "Escucha y elige la respuesta", accentStart = Morado, accentEnd = Rosa, nivel = 2, onClick = { nav.navigate(Rutas.ACT_AUDIO) })
+                PlayNavCard(emoji = "✏️", titulo = "Completar palabras", subtitulo = "Completa la palabra en inglés", accentStart = Verde, accentEnd = Azul, nivel = 3, onClick = { nav.navigate(Rutas.ACT_PALABRAS) })
+                PlayNavCard(emoji = "🤖", titulo = "Chat con el Tutor", subtitulo = "Conversa y aprende con tu compañero", accentStart = Azul, accentEnd = Verde, nivel = 4, onClick = { nav.navigate(Rutas.ACT_CHAT) })
             }
         }
     }
@@ -439,10 +608,10 @@ private fun PantallaActividadImagen(factory: InglesViewModelFactory, nav: NavHos
 
     Scaffold(containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("🖼️ Imágenes", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = PlayBlue, fontWeight = FontWeight.SemiBold) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface, titleContentColor = PlayInk))
+            TopAppBar(title = { Text("🖼️ Imágenes", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = Naranja, fontWeight = FontWeight.SemiBold) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface))
         }
     ) { pad ->
         KidGameBackground {
@@ -495,10 +664,10 @@ private fun PantallaActividadAudio(factory: InglesViewModelFactory, nav: NavHost
 
     Scaffold(containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("👂 Audio", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = PlayPurple, fontWeight = FontWeight.SemiBold) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface, titleContentColor = PlayInk))
+            TopAppBar(title = { Text("👂 Audio", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = Morado, fontWeight = FontWeight.SemiBold) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface))
         }
     ) { pad ->
         KidGameBackground {
@@ -514,13 +683,11 @@ private fun PantallaActividadAudio(factory: InglesViewModelFactory, nav: NavHost
                                 KidSessionProgress(indice + 1, ActividadAudioViewModel.PREGUNTAS_POR_SESION)
                                 Spacer(Modifier.height(8.dp))
                                 Text("Escucha la palabra y elige la correcta", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                                Text("(Toca el botón para escuchar)", style = MaterialTheme.typography.bodyMedium, color = PlayInk.copy(alpha = 0.55f), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                                Text("(Toca el botón para escuchar)", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                                 KidListenButton(enabled = listo, onClick = { vm.reproducir() })
                             }
                             GameFeedbackBlock(texto = feedback, esCorrecto = feedbackOk, solucionCorrecta = solucion)
-                            pregunta!!.opcionesIngles.forEach { op ->
-                                KidOptionButton(label = op, enabled = !procesando, onClick = { vm.responder(op) }, modifier = Modifier.fillMaxWidth())
-                            }
+                            pregunta!!.opcionesIngles.forEach { op -> KidOptionButton(label = op, enabled = !procesando, onClick = { vm.responder(op) }, modifier = Modifier.fillMaxWidth()) }
                         }
                     }
                 }
@@ -546,10 +713,10 @@ private fun PantallaActividadPalabras(factory: InglesViewModelFactory, nav: NavH
 
     Scaffold(containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("✏️ Palabras", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = PlayGreen, fontWeight = FontWeight.SemiBold) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface, titleContentColor = PlayInk))
+            TopAppBar(title = { Text("✏️ Palabras", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = Verde, fontWeight = FontWeight.SemiBold) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface))
         }
     ) { pad ->
         KidGameBackground {
@@ -565,97 +732,11 @@ private fun PantallaActividadPalabras(factory: InglesViewModelFactory, nav: NavH
                                 KidSessionProgress(indice + 1, ActividadPalabrasViewModel.PREGUNTAS_POR_SESION)
                                 Spacer(Modifier.height(8.dp))
                                 Text("Completa la palabra en inglés", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                                Text(pregunta!!.incompleta, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = PlayBlue, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
-                                Text(pregunta!!.pista, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center, color = PlayInk.copy(alpha = 0.6f), modifier = Modifier.fillMaxWidth())
+                                Text(pregunta!!.incompleta, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Naranja, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                                Text(pregunta!!.pista, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
                             }
                             GameFeedbackBlock(texto = feedback, esCorrecto = feedbackOk, solucionCorrecta = solucion)
-                            pregunta!!.opciones.forEach { w ->
-                                KidOptionButton(label = w, enabled = !procesando, onClick = { vm.responder(w) }, modifier = Modifier.fillMaxWidth())
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PantallaReportes(factory: InglesViewModelFactory, nav: NavHostController) {
-    val vm: ReportesViewModel = viewModel(factory = factory)
-    val u by vm.usuario.collectAsState()
-
-    Scaffold(containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(title = { Text("Tus logros", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface.copy(alpha = 0.94f)))
-        }
-    ) { pad ->
-        PlayScreenGradient(Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(pad).padding(20.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                if (u == null) {
-                    Text("No hay datos de usuario.", style = MaterialTheme.typography.titleMedium, color = PlayInk.copy(alpha = 0.65f), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                } else {
-                    val user = u!!
-                    val heroShape = RoundedCornerShape(28.dp)
-                    Box(modifier = Modifier.fillMaxWidth().shadow(22.dp, heroShape, spotColor = PlayPurple.copy(alpha = 0.3f)).clip(heroShape).background(Brush.horizontalGradient(colors = listOf(PlayBlue, PlayPurple))).padding(24.dp)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("⭐ Nivel ${user.nivel}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text("Puntos: ${user.puntajeTotal}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = PlayYellow)
-                            if (user.rachaActual > 0) Text("🔥 Racha: ${user.rachaActual} días (Récord: ${user.rachaMaxima})", style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.9f))
-                        }
-                    }
-                    Text("Rendimiento por juego", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PlayInk)
-                    BarraJuegoKid("🖼️ Imágenes", user.aciertosImagen, user.partidasImagen, PlayBlue)
-                    BarraJuegoKid("👂 Audio", user.aciertosAudio, user.partidasAudio, PlayPurple)
-                    BarraJuegoKid("✏️ Palabras", user.aciertosPalabras, user.partidasPalabras, PlayGreen)
-                    val mejoras = areasMejora(user)
-                    val tipShape = RoundedCornerShape(26.dp)
-                    Box(modifier = Modifier.fillMaxWidth().shadow(16.dp, tipShape, spotColor = PlayYellow.copy(alpha = 0.35f)).clip(tipShape).background(PlayYellowSoft).padding(20.dp)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text("Consejos para mejorar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PlayInk)
-                            if (mejoras.isEmpty()) Text("¡Genial! Sigue jugando los tres modos para subir de nivel.", style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.72f))
-                            else mejoras.forEach { linea -> Text("• $linea", style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.78f)) }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PantallaSelectorMascota(factory: InglesViewModelFactory, nav: NavHostController) {
-    val scope = rememberCoroutineScope()
-    val ctx = LocalContext.current
-    val app = ctx.applicationContext as InglesApp
-
-    Scaffold(containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(title = { Text("Elige tu compañero", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface.copy(alpha = 0.94f)))
-        }
-    ) { pad ->
-        PlayScreenGradient(Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(pad).padding(20.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("¿Quién será tu compañero de aventura?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PlayInk, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                CompaneroData.todos.forEach { companero ->
-                    val shape = RoundedCornerShape(24.dp)
-                    Box(modifier = Modifier.fillMaxWidth().shadow(12.dp, shape, spotColor = PlayPurple.copy(0.2f)).clip(shape).background(PlaySurface)
-                        .clickable { scope.launch { val id = app.sesion.usuarioIdActivo ?: return@launch; app.repositorioUsuario.guardarMascota(id, companero.id); nav.popBackStack() } }
-                        .padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Box(modifier = Modifier.size(72.dp).clip(CircleShape).background(PlayYellowSoft), contentAlignment = Alignment.Center) {
-                                Text(companero.emoji, style = MaterialTheme.typography.displaySmall)
-                            }
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(companero.nombre, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PlayInk)
-                                Text(companero.frasesBienvenida.first(), style = MaterialTheme.typography.bodyMedium, color = PlayInk.copy(alpha = 0.7f))
-                            }
+                            pregunta!!.opciones.forEach { w -> KidOptionButton(label = w, enabled = !procesando, onClick = { vm.responder(w) }, modifier = Modifier.fillMaxWidth()) }
                         }
                     }
                 }
@@ -675,10 +756,10 @@ private fun PantallaActividadVocabulario(factory: InglesViewModelFactory, nav: N
 
     Scaffold(containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("📖 Aprende palabras", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Reiniciar", color = PlayYellow, fontWeight = FontWeight.SemiBold) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface, titleContentColor = PlayInk))
+            TopAppBar(title = { Text("📖 Aprende palabras", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Reiniciar", color = Amarillo, fontWeight = FontWeight.SemiBold) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface))
         }
     ) { pad ->
         KidGameBackground {
@@ -688,31 +769,31 @@ private fun PantallaActividadVocabulario(factory: InglesViewModelFactory, nav: N
                     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                         Text("🎉", style = MaterialTheme.typography.displayLarge)
                         Spacer(Modifier.height(12.dp))
-                        Text("¡Estudiaste 10 palabras!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = PlayInk, textAlign = TextAlign.Center)
+                        Text("¡Estudiaste 10 palabras!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                         Spacer(Modifier.height(8.dp))
-                        Text("Ahora ve a los juegos y demuestra lo que aprendiste", style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.7f), textAlign = TextAlign.Center)
+                        Text("Ahora ve a los juegos y demuestra lo que aprendiste", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                         Spacer(Modifier.height(24.dp))
-                        PlaySolidButton(text = "Estudiar más palabras", onClick = { vm.reiniciar() }, containerColor = PlayYellow)
+                        PlaySolidButton(text = "Estudiar más palabras", onClick = { vm.reiniciar() }, containerColor = Amarillo)
                         Spacer(Modifier.height(12.dp))
-                        PlayOutlineButton(text = "Ir a jugar", onClick = { nav.popBackStack() }, borderColor = PlayGreen)
+                        PlayOutlineButton(text = "Ir a jugar", onClick = { nav.popBackStack() }, borderColor = Verde)
                     }
                 } else if (tarjeta != null) {
                     val shape = RoundedCornerShape(28.dp)
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f).shadow(20.dp, shape, spotColor = PlayYellow.copy(0.3f)).clip(shape).background(PlaySurface).clickable { if (!mostrarTrad) vm.revelarTraduccion() }, contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f).shadow(20.dp, shape, spotColor = Amarillo.copy(0.3f)).clip(shape).background(MaterialTheme.colorScheme.surface).clickable { if (!mostrarTrad) vm.revelarTraduccion() }, contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(32.dp)) {
                             Text(tarjeta.emoji, style = MaterialTheme.typography.displayLarge.copy(fontSize = MaterialTheme.typography.displayLarge.fontSize * 2f))
-                            Text(tarjeta.en, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = PlayBlue, textAlign = TextAlign.Center)
+                            Text(tarjeta.en, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = Naranja, textAlign = TextAlign.Center)
                             if (mostrarTrad) {
-                                Text(tarjeta.es, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = PlayGreen, textAlign = TextAlign.Center)
+                                Text(tarjeta.es, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Verde, textAlign = TextAlign.Center)
                             } else {
-                                Text("Toca para ver la traducción en español", style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.45f), textAlign = TextAlign.Center)
+                                Text("Toca para ver la traducción en español", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                             }
                         }
                     }
                     if (mostrarTrad) {
-                        PlaySolidButton(text = if (indice < ActividadVocabularioViewModel.TARJETAS_POR_SESION - 1) "Siguiente palabra ➡️" else "¡Terminar! 🎉", onClick = { vm.siguiente() }, containerColor = PlayGreen)
+                        PlaySolidButton(text = if (indice < ActividadVocabularioViewModel.TARJETAS_POR_SESION - 1) "Siguiente palabra ➡️" else "¡Terminar! 🎉", onClick = { vm.siguiente() }, containerColor = Verde)
                     } else {
-                        PlayOutlineButton(text = "Toca la tarjeta para ver", onClick = { vm.revelarTraduccion() }, borderColor = PlayYellow)
+                        PlayOutlineButton(text = "Toca la tarjeta para ver", onClick = { vm.revelarTraduccion() }, borderColor = Amarillo)
                     }
                 }
             }
@@ -735,34 +816,33 @@ private fun PantallaActividadChat(factory: InglesViewModelFactory, nav: NavHostC
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val ultimoMensaje = mensajes.lastOrNull()
-
     val scale by animateFloatAsState(targetValue = if (emocion.animacion == "happy" || emocion.animacion == "celebrate") 1.18f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "mascota")
 
     LaunchedEffect(error) { error?.let { scope.launch { snack.showSnackbar(it) }; vm.limpiarError() } }
 
     Scaffold(snackbarHost = { SnackbarHost(snack) }, containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("Chat con ${companero.nombre}", fontWeight = FontWeight.Bold, color = PlayInk) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = PlayInk) } },
-                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = PlayPurple, fontWeight = FontWeight.SemiBold) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PlaySurface, titleContentColor = PlayInk))
+            TopAppBar(title = { Text("Chat con ${companero.nombre}", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                actions = { TextButton(onClick = { vm.reiniciar() }) { Text("Nueva sesión", color = Morado, fontWeight = FontWeight.SemiBold) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface))
         }
     ) { pad ->
         KidGameBackground {
             Column(modifier = Modifier.padding(pad).fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 KidSessionProgress(turno + 1, ActividadChatViewModel.TURNOS_POR_SESION)
-                Box(modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp), spotColor = PlayPurple.copy(0.2f)).clip(RoundedCornerShape(24.dp)).background(PlaySurface).padding(16.dp)) {
+                Box(modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp), spotColor = Morado.copy(0.2f)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                         Text(emocion.emoji, style = MaterialTheme.typography.displaySmall, modifier = Modifier.scale(scale))
                         if (cargando) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("${companero.nombre} está pensando...", style = MaterialTheme.typography.bodyLarge, color = PlayInk.copy(alpha = 0.7f))
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = PlayPurple, strokeWidth = 2.dp)
+                                Text("${companero.nombre} está pensando...", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Morado, strokeWidth = 2.dp)
                             }
                         } else if (ultimoMensaje != null) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(ultimoMensaje.textoIngles, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = PlayInk)
-                                Text(ultimoMensaje.textoEspanol, style = MaterialTheme.typography.bodyMedium, color = PlayInk.copy(alpha = 0.6f))
+                                Text(ultimoMensaje.textoIngles, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                Text(ultimoMensaje.textoEspanol, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -773,8 +853,87 @@ private fun PantallaActividadChat(factory: InglesViewModelFactory, nav: NavHostC
                     }
                 } else {
                     Column(modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ultimoMensaje?.opciones?.forEach { opcion ->
-                            KidOptionButton(label = opcion, enabled = !cargando, onClick = { vm.responderOpcion(opcion) }, modifier = Modifier.fillMaxWidth())
+                        ultimoMensaje?.opciones?.forEach { opcion -> KidOptionButton(label = opcion, enabled = !cargando, onClick = { vm.responderOpcion(opcion) }, modifier = Modifier.fillMaxWidth()) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PantallaReportes(factory: InglesViewModelFactory, nav: NavHostController) {
+    val vm: ReportesViewModel = viewModel(factory = factory)
+    val nino by vm.nino.collectAsState()
+
+    Scaffold(containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(title = { Text("Tus logros", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)))
+        }
+    ) { pad ->
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.padding(pad).padding(20.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                if (nino == null) {
+                    Text("No hay datos disponibles.", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                } else {
+                    val n = nino!!
+                    val heroShape = RoundedCornerShape(28.dp)
+                    Box(modifier = Modifier.fillMaxWidth().shadow(22.dp, heroShape, spotColor = Morado.copy(0.3f)).clip(heroShape).background(Brush.horizontalGradient(listOf(Naranja, Rosa))).padding(24.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("${n.avatarEmoji} ${n.nombreMostrar}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("⭐ Nivel ${n.nivel} · ${n.puntajeTotal} puntos", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                            if (n.rachaActual > 0) Text("🔥 Racha: ${n.rachaActual} días (Récord: ${n.rachaMaxima})", style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(0.9f))
+                            val horas = n.tiempoUsoTotalMinutos / 60
+                            val minutos = n.tiempoUsoTotalMinutos % 60
+                            Text("⏱ Tiempo total: ${horas}h ${minutos}min", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(0.85f))
+                        }
+                    }
+                    Text("Rendimiento por juego", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+                    BarraJuegoKid("🖼️ Imágenes", n.aciertosImagen, n.partidasImagen, Naranja)
+                    BarraJuegoKid("👂 Audio", n.aciertosAudio, n.partidasAudio, Morado)
+                    BarraJuegoKid("✏️ Palabras", n.aciertosPalabras, n.partidasPalabras, Verde)
+                    val mejoras = areasMejora(n)
+                    val tipShape = RoundedCornerShape(26.dp)
+                    Box(modifier = Modifier.fillMaxWidth().shadow(16.dp, tipShape, spotColor = Amarillo.copy(0.35f)).clip(tipShape).background(AmarilloSuave).padding(20.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("Consejos para mejorar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = NaranjaOscuro)
+                            if (mejoras.isEmpty()) Text("¡Genial! Sigue jugando los tres modos para subir de nivel.", style = MaterialTheme.typography.bodyLarge, color = NaranjaOscuro.copy(0.8f))
+                            else mejoras.forEach { linea -> Text("• $linea", style = MaterialTheme.typography.bodyLarge, color = NaranjaOscuro.copy(0.8f)) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PantallaSelectorMascota(factory: InglesViewModelFactory, nav: NavHostController) {
+    val vm: NinoPerfilViewModel = viewModel(factory = factory)
+
+    Scaffold(containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(title = { Text("Elige tu compañero", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)))
+        }
+    ) { pad ->
+        PlayScreenGradient(Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.padding(pad).padding(20.dp).fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("¿Quién será tu compañero de aventura?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                CompaneroData.todos.forEach { companero ->
+                    val shape = RoundedCornerShape(24.dp)
+                    Box(modifier = Modifier.fillMaxWidth().shadow(12.dp, shape, spotColor = Morado.copy(0.2f)).clip(shape).background(MaterialTheme.colorScheme.surface).clickable { vm.guardarMascota(companero.id) { nav.popBackStack() } }.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Box(modifier = Modifier.size(72.dp).clip(CircleShape).background(AmarilloSuave), contentAlignment = Alignment.Center) { Text(companero.emoji, style = MaterialTheme.typography.displaySmall) }
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(companero.nombre, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text(companero.frasesBienvenida.first(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
@@ -789,27 +948,27 @@ private fun BarraJuegoKid(titulo: String, aciertos: Int, intentos: Int, color: C
     val animated by animateFloatAsState(targetValue = ratio, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow), label = "barraProgreso")
     val errores = (intentos - aciertos).coerceAtLeast(0)
     val shape = RoundedCornerShape(24.dp)
-    Box(modifier = Modifier.fillMaxWidth().shadow(elevation = 16.dp, shape = shape, ambientColor = color.copy(alpha = 0.18f), spotColor = color.copy(alpha = 0.3f)).clip(shape).background(PlaySurface)) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PlayInk)
-            Box(Modifier.fillMaxWidth().height(18.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.14f))) {
-                Box(Modifier.fillMaxHeight().fillMaxWidth(animated).background(Brush.horizontalGradient(colors = listOf(color, color.copy(alpha = 0.88f)))))
+    Box(modifier = Modifier.fillMaxWidth().shadow(12.dp, shape, spotColor = color.copy(0.2f)).clip(shape).background(MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Box(Modifier.fillMaxWidth().height(16.dp).clip(RoundedCornerShape(10.dp)).background(color.copy(0.15f))) {
+                Box(Modifier.fillMaxHeight().fillMaxWidth(animated).background(Brush.horizontalGradient(listOf(color, color.copy(0.8f)))))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("✅ $aciertos aciertos", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = PlayGreen)
-                Text("❌ $errores errores", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = PlayError.copy(alpha = 0.92f))
+                Text("✅ $aciertos aciertos", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = Verde)
+                Text("❌ $errores errores", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = PlayError)
             }
-            Text("${(ratio * 100).toInt()} % de aciertos", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = color)
+            Text("${(ratio * 100).toInt()}% de aciertos", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = color)
         }
     }
 }
 
-private fun areasMejora(u: UsuarioEntity): List<String> {
+private fun areasMejora(n: NinoEntity): List<String> {
     data class T(val nombre: String, val a: Int, val t: Int)
-    val tipos = listOf(T("Imágenes", u.aciertosImagen, u.partidasImagen), T("Audio", u.aciertosAudio, u.partidasAudio), T("Palabras", u.aciertosPalabras, u.partidasPalabras))
+    val tipos = listOf(T("Imágenes", n.aciertosImagen, n.partidasImagen), T("Audio", n.aciertosAudio, n.partidasAudio), T("Palabras", n.aciertosPalabras, n.partidasPalabras))
     return tipos.mapNotNull { x ->
         if (x.t < 3) return@mapNotNull null
         val r = x.a.toFloat() / x.t
-        if (r < 0.55f) "Practica más el juego de ${x.nombre.lowercase()} (${(r * 100).toInt()} % acierto)" else null
+        if (r < 0.55f) "Practica más el juego de ${x.nombre.lowercase()} (${(r * 100).toInt()}% acierto)" else null
     }
 }

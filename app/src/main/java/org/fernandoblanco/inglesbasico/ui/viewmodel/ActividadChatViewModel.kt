@@ -2,20 +2,16 @@ package org.fernandoblanco.inglesbasico.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.fernandoblanco.inglesbasico.data.CompaneroData
+import org.fernandoblanco.inglesbasico.data.NinoRepository
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
-import org.fernandoblanco.inglesbasico.data.UsuarioRepository
+import org.fernandoblanco.inglesbasico.data.VocabItem
 import org.fernandoblanco.inglesbasico.data.VocabularyBank
-import org.json.JSONArray
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
 data class MensajeChat(
     val textoIngles: String,
@@ -30,15 +26,12 @@ data class EstadoEmocion(
 )
 
 class ActividadChatViewModel(
-    private val repositorio: UsuarioRepository,
+    private val repositorio: NinoRepository,
     private val sesion: SesionUsuario
 ) : ViewModel() {
 
     companion object {
         const val TURNOS_POR_SESION = 6
-        private const val API_URL = "https://api.anthropic.com/v1/messages"
-        private const val API_KEY = "TU_API_KEY_AQUI"
-        private const val MODELO = "claude-opus-4-6"
     }
 
     private val _mensajes = MutableStateFlow<List<MensajeChat>>(emptyList())
@@ -65,48 +58,45 @@ class ActividadChatViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private var nivelUsuario = 1
-    private val historialApi = mutableListOf<Map<String, String>>()
-    private var vocabularioSesion = ""
+    private var nivelNino = 1
+    private val tiposPregunta = listOf("imagen", "español", "definicion")
+    private var preguntasSesion: List<VocabItem> = emptyList()
+    private var indicePregunta = 0
 
-    init {
-        inicializar()
-    }
+    init { inicializar() }
 
     private fun inicializar() {
         viewModelScope.launch {
-            val id = sesion.usuarioIdActivo ?: return@launch
-            val u = repositorio.obtenerPorId(id) ?: return@launch
-            nivelUsuario = u.nivel
-            _companero.value = CompaneroData.obtenerPorId(u.mascotaId)
-            vocabularioSesion = VocabularyBank.items
-                .shuffled()
-                .take(8)
-                .joinToString(", ") { "${it.emoji} ${it.en} = ${it.es}" }
-            pedirPrimerMensaje()
+            val id = sesion.ninoIdActivo ?: return@launch
+            val n = repositorio.obtenerPorId(id) ?: return@launch
+            nivelNino = n.nivel
+            _companero.value = CompaneroData.obtenerPorId(n.mascotaId)
+            preguntasSesion = VocabularyBank.items.shuffled().take(TURNOS_POR_SESION)
+            mostrarBienvenida()
         }
     }
 
-    private fun pedirPrimerMensaje() {
+    private fun mostrarBienvenida() {
         viewModelScope.launch {
             _cargando.value = true
             _emocionCompanero.value = EstadoEmocion("🤔", "thinking")
-            historialApi.clear()
-
-            val userMsg = "Comienza la sesión. Saluda al niño con entusiasmo en inglés (con traducción al español entre paréntesis) y haz tu primera pregunta con exactamente 4 opciones de respuesta. Solo JSON."
-            historialApi.add(mapOf("role" to "user", "content" to userMsg))
-
-            val respuesta = llamarApi(construirSystemPrompt())
-            val mensaje = parsearRespuesta(respuesta)
-
-            if (mensaje != null) {
-                historialApi.add(mapOf("role" to "assistant", "content" to respuesta))
-                _mensajes.value = listOf(mensaje)
-                _emocionCompanero.value = EstadoEmocion("😊", "idle")
-            } else {
-                _error.value = "No se pudo conectar con el tutor. Verifica tu conexión."
-                _emocionCompanero.value = EstadoEmocion("😅", "idle")
+            delay(800)
+            val comp = _companero.value
+            val saludo = comp.frasesBienvenida.random()
+            val primera = preguntasSesion.firstOrNull()
+            if (primera != null) {
+                val opciones = VocabularyBank.randomOptions(primera, VocabularyBank.items, 4)
+                val tipo = tiposPregunta.random()
+                val (textoEn, textoEs) = generarPregunta(primera, tipo)
+                _mensajes.value = listOf(
+                    MensajeChat(
+                        textoIngles = "Hello! (¡Hola!) I'm ${comp.nombre}! 😄 $textoEn",
+                        textoEspanol = "$saludo $textoEs",
+                        opciones = opciones
+                    )
+                )
             }
+            _emocionCompanero.value = EstadoEmocion("😊", "idle")
             _cargando.value = false
         }
     }
@@ -114,62 +104,64 @@ class ActividadChatViewModel(
     fun responderOpcion(opcionElegida: String) {
         if (_cargando.value || _finSesion.value) return
         val turnoAntes = _turnoActual.value
+        val itemActual = preguntasSesion.getOrNull(indicePregunta) ?: return
         viewModelScope.launch {
             _cargando.value = true
             _emocionCompanero.value = EstadoEmocion("🤔", "thinking")
-
-            val esUltimoTurno = turnoAntes >= TURNOS_POR_SESION - 1
-            val instruccion = if (esUltimoTurno) {
-                "El niño eligió: \"$opcionElegida\". Evalúa si fue correcto, da un feedback muy motivador y despídete con cariño. Es el último turno. Pon opciones vacías []."
-            } else {
-                "El niño eligió: \"$opcionElegida\". Evalúa si fue correcto con feedback amigable y haz la siguiente pregunta con exactamente 4 opciones. Turno ${turnoAntes + 2} de $TURNOS_POR_SESION."
-            }
-
-            historialApi.add(mapOf("role" to "user", "content" to instruccion))
-
-            val respuesta = llamarApi(construirSystemPrompt())
-            val mensaje = parsearRespuesta(respuesta)
-
-            if (mensaje != null) {
-                historialApi.add(mapOf("role" to "assistant", "content" to respuesta))
-                _mensajes.value = _mensajes.value + mensaje
-
-                val fueCorrecto = mensaje.fueCorrecto ?: false
-                val id = sesion.usuarioIdActivo
-
-                if (fueCorrecto) {
-                    _aciertos.value = _aciertos.value + 1
-                    _emocionCompanero.value = EstadoEmocion("🎉", "happy")
-                } else {
-                    _emocionCompanero.value = EstadoEmocion("😢", "sad")
-                }
-
+            delay(700)
+            val fueCorrecto = opcionElegida.equals(itemActual.en, ignoreCase = true)
+            val comp = _companero.value
+            val id = sesion.ninoIdActivo
+            if (fueCorrecto) {
+                _aciertos.value = _aciertos.value + 1
+                _emocionCompanero.value = EstadoEmocion("🎉", "happy")
                 if (id != null) {
-                    repositorio.registrarResultadoActividad(
-                        id,
-                        UsuarioRepository.TipoActividad.PALABRAS,
-                        fueCorrecto
-                    )
+                    repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.PALABRAS, true)
                     repositorio.actualizarRacha(id)
                 }
-
-                _turnoActual.value = turnoAntes + 1
-
-                if (esUltimoTurno) {
-                    _finSesion.value = true
-                    _emocionCompanero.value = EstadoEmocion("🏆", "celebrate")
-                }
             } else {
-                _error.value = "Error al procesar la respuesta. Intenta de nuevo."
-                _emocionCompanero.value = EstadoEmocion("😅", "idle")
+                _emocionCompanero.value = EstadoEmocion("😢", "sad")
+                if (id != null) repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.PALABRAS, false)
+            }
+            _turnoActual.value = turnoAntes + 1
+            indicePregunta++
+            val esUltimo = _turnoActual.value >= TURNOS_POR_SESION
+            if (esUltimo) {
+                val feedbackFinal = if (fueCorrecto) comp.frasesAcierto.random() else comp.frasesFallo.random()
+                val despedida = generarDespedida(_aciertos.value, TURNOS_POR_SESION)
+                _mensajes.value = _mensajes.value + MensajeChat(
+                    textoIngles = if (fueCorrecto) "Correct! (¡Correcto!) 🎉 $despedida"
+                    else "Almost! (¡Casi!) The answer was: ${itemActual.en} ${itemActual.emoji}. $despedida",
+                    textoEspanol = feedbackFinal,
+                    opciones = emptyList(),
+                    fueCorrecto = fueCorrecto
+                )
+                _finSesion.value = true
+                _emocionCompanero.value = EstadoEmocion("🏆", "celebrate")
+            } else {
+                val siguienteItem = preguntasSesion.getOrNull(indicePregunta)
+                if (siguienteItem != null) {
+                    val tipo = tiposPregunta.random()
+                    val (textoEn, textoEs) = generarPregunta(siguienteItem, tipo)
+                    val opciones = VocabularyBank.randomOptions(siguienteItem, VocabularyBank.items, 4)
+                    val feedbackEn = if (fueCorrecto)
+                        listOf("Correct! (¡Correcto!) 🎉", "Amazing! (¡Increíble!) ⭐", "Great job! (¡Muy bien!) 🌟").random()
+                    else
+                        listOf("Almost! (¡Casi!) The answer was: ${itemActual.en} ${itemActual.emoji}", "Not quite! (¡No era esa!) It was: ${itemActual.en} ${itemActual.emoji}").random()
+                    val feedbackEs = if (fueCorrecto) comp.frasesAcierto.random() else comp.frasesFallo.random()
+                    _mensajes.value = _mensajes.value + MensajeChat(
+                        textoIngles = "$feedbackEn Now... $textoEn",
+                        textoEspanol = "$feedbackEs $textoEs",
+                        opciones = opciones,
+                        fueCorrecto = fueCorrecto
+                    )
+                }
             }
             _cargando.value = false
         }
     }
 
-    fun limpiarError() {
-        _error.value = null
-    }
+    fun limpiarError() { _error.value = null }
 
     fun reiniciar() {
         _mensajes.value = emptyList()
@@ -177,126 +169,27 @@ class ActividadChatViewModel(
         _finSesion.value = false
         _aciertos.value = 0
         _error.value = null
+        indicePregunta = 0
         _emocionCompanero.value = EstadoEmocion("😊", "idle")
-        historialApi.clear()
-        vocabularioSesion = VocabularyBank.items
-            .shuffled()
-            .take(8)
-            .joinToString(", ") { "${it.emoji} ${it.en} = ${it.es}" }
-        pedirPrimerMensaje()
+        preguntasSesion = VocabularyBank.items.shuffled().take(TURNOS_POR_SESION)
+        mostrarBienvenida()
     }
 
-    private fun construirSystemPrompt(): String {
-        val nivelTexto = when {
-            nivelUsuario <= 2 -> "muy básico: colores, animales, números del 1 al 10, saludos"
-            nivelUsuario <= 5 -> "básico: comida, ropa, familia, partes del cuerpo, verbos simples"
-            else -> "intermedio: verbos en presente, adjetivos, rutinas diarias, descripciones"
-        }
-        return """
-Eres un tutor de inglés súper amigable y divertido para niños hispanohablantes de 6 a 12 años.
-El nivel del estudiante es: $nivelTexto.
-Vocabulario sugerido para esta sesión: $vocabularioSesion.
-
-REGLAS ABSOLUTAS:
-1. Responde ÚNICAMENTE con un objeto JSON válido. Sin texto antes ni después. Sin comillas de código.
-2. Cada mensaje en inglés DEBE incluir la traducción al español entre paréntesis, por ejemplo: "Hello! (¡Hola!) What is this? (¿Qué es esto?) 🐶"
-3. El campo "textoEspanol" es un resumen adicional en español puro para que el niño entienda todo.
-4. Las preguntas deben ser simples, visuales y usar emojis.
-5. Cuando evalúes una respuesta del niño, debes indicar "fueCorrecto": true o false.
-6. Siempre incluye exactamente 4 opciones a menos que sea la despedida final.
-
-FORMATO JSON ESTRICTO:
-{
-  "textoIngles": "texto en inglés con (traducción en español) incluida",
-  "textoEspanol": "explicación adicional en español",
-  "opciones": ["Opción A", "Opción B", "Opción C", "Opción D"],
-  "fueCorrecto": true
-}
-
-Nota: En el primer mensaje omite "fueCorrecto". En despedida final pon "opciones": [].
-        """.trimIndent()
-    }
-
-    private suspend fun llamarApi(systemPrompt: String): String {
-        return withContext(Dispatchers.IO) {
-            try {
-                val url = URL(API_URL)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/json")
-                conn.setRequestProperty("x-api-key", API_KEY)
-                conn.setRequestProperty("anthropic-version", "2023-06-01")
-                conn.connectTimeout = 15000
-                conn.readTimeout = 30000
-                conn.doOutput = true
-
-                val mensajesJson = JSONArray()
-                historialApi.forEach { msg ->
-                    mensajesJson.put(
-                        JSONObject().apply {
-                            put("role", msg["role"])
-                            put("content", msg["content"])
-                        }
-                    )
-                }
-
-                val body = JSONObject().apply {
-                    put("model", MODELO)
-                    put("max_tokens", 1024)
-                    put("system", systemPrompt)
-                    put("messages", mensajesJson)
-                }.toString()
-
-                conn.outputStream.write(body.toByteArray(Charsets.UTF_8))
-                conn.outputStream.flush()
-
-                val codigo = conn.responseCode
-                val texto = if (codigo == 200) {
-                    conn.inputStream.bufferedReader(Charsets.UTF_8).readText()
-                } else {
-                    conn.errorStream?.bufferedReader(Charsets.UTF_8)?.readText() ?: ""
-                }
-                conn.disconnect()
-
-                if (codigo != 200) return@withContext ""
-
-                val jsonResp = JSONObject(texto)
-                jsonResp.getJSONArray("content").getJSONObject(0).getString("text")
-
-            } catch (e: Exception) {
-                ""
-            }
+    private fun generarPregunta(item: VocabItem, tipo: String): Pair<String, String> {
+        return when (tipo) {
+            "imagen" -> Pair("What is this? (¿Qué es esto?) ${item.emoji}", "¿Cuál es la palabra en inglés para ${item.emoji}?")
+            "español" -> Pair("How do you say \"${item.es}\" in English? (¿Cómo se dice \"${item.es}\" en inglés?)", "Elige la traducción correcta al inglés.")
+            else -> Pair("Which word means \"${item.es}\"? (¿Cuál palabra significa \"${item.es}\"?)", "Selecciona la palabra correcta en inglés.")
         }
     }
 
-    private fun parsearRespuesta(raw: String): MensajeChat? {
-        if (raw.isBlank()) return null
-        return try {
-            val limpio = raw.trim()
-                .removePrefix("```json")
-                .removePrefix("```")
-                .removeSuffix("```")
-                .trim()
-
-            val obj = JSONObject(limpio)
-            val textoIngles = obj.optString("textoIngles", "").ifBlank { return null }
-            val textoEspanol = obj.optString("textoEspanol", "")
-            val opcionesArr = obj.optJSONArray("opciones")
-            val opciones = if (opcionesArr != null) {
-                (0 until opcionesArr.length())
-                    .map { opcionesArr.getString(it) }
-                    .filter { it.isNotBlank() }
-            } else emptyList()
-            val fueCorrecto = if (obj.has("fueCorrecto")) obj.getBoolean("fueCorrecto") else null
-
-            MensajeChat(
-                textoIngles = textoIngles,
-                textoEspanol = textoEspanol,
-                opciones = opciones,
-                fueCorrecto = fueCorrecto
-            )
-        } catch (e: Exception) {
-            null
+    private fun generarDespedida(aciertos: Int, total: Int): String {
+        val p = (aciertos.toFloat() / total * 100).toInt()
+        return when {
+            p == 100 -> "Perfect score! (¡Puntaje perfecto!) 🏆🌟"
+            p >= 70 -> "Great session! (¡Gran sesión!) 🎉 $aciertos/$total correct!"
+            p >= 50 -> "Good effort! (¡Buen esfuerzo!) 💪 Keep practicing!"
+            else -> "Keep going! (¡Sigue adelante!) 🌈 You'll improve!"
         }
     }
 }

@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.fernandoblanco.inglesbasico.data.SesionUsuario
 import org.fernandoblanco.inglesbasico.data.PadreRepository
+import org.fernandoblanco.inglesbasico.data.SesionUsuario
 
-class AuthViewModel(
-    private val padreRepo: PadreRepository,
+class AuthPadreViewModel(
+    private val repositorio: PadreRepository,
     private val sesion: SesionUsuario
 ) : ViewModel() {
 
@@ -20,35 +20,25 @@ class AuthViewModel(
     private val _cargando = MutableStateFlow(false)
     val cargando: StateFlow<Boolean> = _cargando.asStateFlow()
 
-    fun limpiarMensaje() {
-        _mensaje.value = null
-    }
+    fun limpiarMensaje() { _mensaje.value = null }
 
     fun iniciarSesion(usuario: String, contrasena: String, alExito: () -> Unit) {
         viewModelScope.launch {
             _cargando.value = true
-            val r = padreRepo.iniciarSesion(usuario, contrasena)
+            val r = repositorio.iniciarSesion(usuario, contrasena)
             _cargando.value = false
-            r.onSuccess { idPadre ->
-                sesion.padreIdActivo = idPadre
-                alExito()
-            }.onFailure {
-                _mensaje.value = it.message ?: "Error al iniciar sesión"
-            }
+            r.onSuccess { alExito() }
+                .onFailure { _mensaje.value = it.message ?: "Error al iniciar sesión" }
         }
     }
 
     fun registrar(usuario: String, nombre: String, contrasena: String, alExito: () -> Unit) {
         viewModelScope.launch {
             _cargando.value = true
-            val r = padreRepo.registrar(usuario, nombre, contrasena)
+            val r = repositorio.registrar(usuario, nombre, contrasena)
             _cargando.value = false
-            r.onSuccess { idPadre ->
-                sesion.padreIdActivo = idPadre
-                alExito()
-            }.onFailure {
-                _mensaje.value = it.message ?: "No se pudo crear la cuenta"
-            }
+            r.onSuccess { alExito() }
+                .onFailure { _mensaje.value = it.message ?: "No se pudo crear la cuenta" }
         }
     }
 }

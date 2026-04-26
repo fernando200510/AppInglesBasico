@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.fernandoblanco.inglesbasico.data.NinoRepository
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
-import org.fernandoblanco.inglesbasico.data.UsuarioRepository
 import org.fernandoblanco.inglesbasico.data.VocabularyBank
 
 data class PreguntaImagen(
@@ -22,8 +22,8 @@ data class PreguntaImagen(
 )
 
 class ActividadImagenViewModel(
-    private val repositorio: UsuarioRepository,
-    private val sesionUsuario: SesionUsuario
+    private val repositorio: NinoRepository,
+    private val sesion: SesionUsuario
 ) : ViewModel() {
 
     companion object {
@@ -31,7 +31,6 @@ class ActividadImagenViewModel(
     }
 
     private val pool = VocabularyBank.items
-
     private var preguntasSesion: List<PreguntaImagen> = emptyList()
 
     private val _indice = MutableStateFlow(0)
@@ -61,9 +60,7 @@ class ActividadImagenViewModel(
     private val _sonido = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
     val sonido: SharedFlow<Boolean> = _sonido.asSharedFlow()
 
-    init {
-        reiniciar()
-    }
+    init { reiniciar() }
 
     private fun sincronizarPreguntaVisible() {
         _preguntaVisible.value = when {
@@ -75,11 +72,10 @@ class ActividadImagenViewModel(
     fun reiniciar() {
         val base = pool.shuffled().distinctBy { it.enKey.lowercase() }.take(PREGUNTAS_POR_SESION)
         preguntasSesion = base.map { item ->
-            val opcionesItems = VocabularyBank.randomOptions(item, pool, 4)
-            val opcionesConTrad = opcionesItems.map { enTexto ->
-                val vocabItem = pool.find { it.en == enTexto }
-                if (vocabItem != null) "${vocabItem.emoji} $enTexto — ${vocabItem.es}"
-                else enTexto
+            val opcionesEn = VocabularyBank.randomOptions(item, pool, 4)
+            val opcionesConTrad = opcionesEn.map { enTexto ->
+                val v = pool.find { it.en == enTexto }
+                if (v != null) "${v.emoji} $enTexto — ${v.es}" else enTexto
             }
             PreguntaImagen(
                 emoji = item.emoji,
@@ -104,11 +100,12 @@ class ActividadImagenViewModel(
         val pregunta = preguntasSesion.getOrNull(idx) ?: return
         _procesando.value = true
         viewModelScope.launch {
-            val id = sesionUsuario.usuarioIdActivo
+            val id = sesion.ninoIdActivo
             if (id == null) { _procesando.value = false; return@launch }
             val ok = opcionElegida.contains(pregunta.correctaEn, ignoreCase = true)
             _sonido.tryEmit(ok)
-            repositorio.registrarResultadoActividad(id, UsuarioRepository.TipoActividad.IMAGEN, ok)
+            repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.IMAGEN, ok)
+            repositorio.actualizarRacha(id)
             _feedbackOk.value = ok
             _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
             _solucionCorrecta.value = if (ok) null else "${pregunta.emoji} ${pregunta.correctaEn} — ${pregunta.correctaEs}"

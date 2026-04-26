@@ -1,76 +1,71 @@
 package org.fernandoblanco.inglesbasico.ui.theme
 
-import android.app.Activity
+import android.os.Build
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import androidx.compose.ui.platform.LocalContext
 
-private val AppLight = lightColorScheme(
-    primary = PlayBlue,
-    onPrimary = Color.White,
-    primaryContainer = KidCardBlue,
-    onPrimaryContainer = PlayInk,
-    secondary = PlayPurple,
-    onSecondary = Color.White,
-    secondaryContainer = PlayPurpleSoft,
-    onSecondaryContainer = PlayInk,
-    tertiary = PlayGreen,
-    onTertiary = Color.White,
-    tertiaryContainer = PlayGreenSoft,
-    onTertiaryContainer = PlayInk,
-    error = PlayError,
-    onError = Color.White,
-    background = PlayCream,
-    onBackground = PlayInk,
-    surface = PlaySurface,
-    onSurface = PlayInk,
-    surfaceVariant = Color(0xFFF0F4FF),
-    onSurfaceVariant = PlayInk,
-    outline = PlayBlue.copy(alpha = 0.35f)
+private val EsquemaClaro = lightColorScheme(
+    primary = Naranja,
+    onPrimary = SuperficieClaro,
+    primaryContainer = Color(0xFFFFEDE6),
+    onPrimaryContainer = NaranjaOscuro,
+    secondary = Morado,
+    onSecondary = SuperficieClaro,
+    secondaryContainer = MoradoSuave,
+    onSecondaryContainer = Morado,
+    tertiary = Verde,
+    onTertiary = SuperficieClaro,
+    tertiaryContainer = VerdeSuave,
+    onTertiaryContainer = VerdeOscuro,
+    background = FondoClaro,
+    onBackground = TextoPrincipalClaro,
+    surface = SuperficieClaro,
+    onSurface = TextoPrincipalClaro,
+    surfaceVariant = Color(0xFFF5F0FF),
+    onSurfaceVariant = TextoSecundarioClaro,
+    error = Rojo,
+    onError = SuperficieClaro,
 )
 
-private val AppDark = darkColorScheme(
-    primary = PlayBlue,
-    onPrimary = PlayInk,
-    primaryContainer = PlayBlueDark,
-    onPrimaryContainer = Color.White,
-    secondary = PlayPurpleSoft,
-    onSecondary = PlayInk,
-    tertiary = PlayGreen,
-    onTertiary = Color.White,
-    background = Color(0xFF12141C),
-    onBackground = Color(0xFFF5F5F5),
-    surface = Color(0xFF1E2230),
-    onSurface = Color(0xFFF5F5F5),
-    surfaceVariant = Color(0xFF2A2F42),
-    onSurfaceVariant = Color(0xFFE0E4F0)
+private val EsquemaOscuro = darkColorScheme(
+    primary = Naranja,
+    onPrimary = Color(0xFF1A0A00),
+    primaryContainer = NaranjaOscuro,
+    onPrimaryContainer = Color(0xFFFFDDD0),
+    secondary = Rosa,
+    onSecondary = Color(0xFF1A0010),
+    secondaryContainer = Color(0xFF5C1A45),
+    onSecondaryContainer = Color(0xFFFFD0E8),
+    tertiary = Verde,
+    onTertiary = Color(0xFF001A14),
+    tertiaryContainer = VerdeOscuro,
+    onTertiaryContainer = Color(0xFFB0FFE8),
+    background = FondoOscuro,
+    onBackground = TextoPrincipalOscuro,
+    surface = SuperficieOscuro,
+    onSurface = TextoPrincipalOscuro,
+    surfaceVariant = TarjetaOscuro,
+    onSurfaceVariant = TextoSecundarioOscuro,
+    error = Color(0xFFFF6B6B),
+    onError = Color(0xFF1A0000),
 )
 
 @Composable
 fun InglesBasicoTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    @Suppress("UNUSED_PARAMETER") dynamicColor: Boolean = false,
+    oscuro: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) AppDark else AppLight
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-        }
-    }
+    val esquema = if (oscuro) EsquemaOscuro else EsquemaClaro
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = esquema,
         typography = Typography,
         content = content
     )

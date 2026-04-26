@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.fernandoblanco.inglesbasico.data.NinoRepository
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
-import org.fernandoblanco.inglesbasico.data.UsuarioRepository
 import org.fernandoblanco.inglesbasico.data.VocabularyBank
 import java.util.Locale
 
@@ -25,8 +25,8 @@ data class PreguntaAudio(
 
 class ActividadAudioViewModel(
     application: Application,
-    private val repositorio: UsuarioRepository,
-    private val sesionUsuario: SesionUsuario
+    private val repositorio: NinoRepository,
+    private val sesion: SesionUsuario
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -34,7 +34,6 @@ class ActividadAudioViewModel(
     }
 
     private val pool = VocabularyBank.items
-
     private var preguntasSesion: List<PreguntaAudio> = emptyList()
 
     private var tts: TextToSpeech? = null
@@ -95,9 +94,8 @@ class ActividadAudioViewModel(
         preguntasSesion = base.map { item ->
             val opcionesEn = VocabularyBank.randomOptions(item, pool, 4)
             val opcionesConTrad = opcionesEn.map { enTexto ->
-                val vocabItem = pool.find { it.en == enTexto }
-                if (vocabItem != null) "${vocabItem.emoji} $enTexto — ${vocabItem.es}"
-                else enTexto
+                val v = pool.find { it.en == enTexto }
+                if (v != null) "${v.emoji} $enTexto — ${v.es}" else enTexto
             }
             PreguntaAudio(
                 palabraIngles = item.en,
@@ -121,11 +119,12 @@ class ActividadAudioViewModel(
         val pregunta = preguntasSesion.getOrNull(idx) ?: return
         _procesando.value = true
         viewModelScope.launch {
-            val id = sesionUsuario.usuarioIdActivo
+            val id = sesion.ninoIdActivo
             if (id == null) { _procesando.value = false; return@launch }
             val ok = opcionElegida.contains(pregunta.palabraIngles, ignoreCase = true)
             _sonido.tryEmit(ok)
-            repositorio.registrarResultadoActividad(id, UsuarioRepository.TipoActividad.AUDIO, ok)
+            repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.AUDIO, ok)
+            repositorio.actualizarRacha(id)
             _feedbackOk.value = ok
             _feedback.value = if (ok) mensajeCorrecto() else mensajeIncorrecto()
             _solucionCorrecta.value = if (ok) null else "${pregunta.palabraIngles} — ${pregunta.palabraEspanol}"

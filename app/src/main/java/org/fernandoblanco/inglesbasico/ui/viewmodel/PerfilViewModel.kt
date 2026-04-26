@@ -11,11 +11,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
-import org.fernandoblanco.inglesbasico.data.UsuarioRepository
-import org.fernandoblanco.inglesbasico.db.entity.UsuarioEntity
+import org.fernandoblanco.inglesbasico.data.NinoRepository
+import org.fernandoblanco.inglesbasico.db.entity.NinoEntity
 
 class PerfilViewModel(
-    private val repositorio: UsuarioRepository,
+    private val repositorio: NinoRepository,
     private val sesion: SesionUsuario
 ) : ViewModel() {
 
@@ -25,21 +25,17 @@ class PerfilViewModel(
     private val _nombreMostrar = MutableStateFlow("")
     val nombreMostrar: StateFlow<String> = _nombreMostrar.asStateFlow()
 
-    private val _usuario = MutableStateFlow("")
-    val usuario: StateFlow<String> = _usuario.asStateFlow()
-
-    val perfil: StateFlow<UsuarioEntity?> = sesion.usuarioIdActivo?.let { id ->
-        repositorio.observarUsuarioActual(id)
+    val perfil: StateFlow<NinoEntity?> = sesion.ninoIdActivo?.let { id ->
+        repositorio.observarNino(id)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-    } ?: flowOf<UsuarioEntity?>(null)
+    } ?: flowOf<NinoEntity?>(null)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         viewModelScope.launch {
-            val id = sesion.usuarioIdActivo ?: return@launch
-            val u = repositorio.obtenerPorId(id) ?: return@launch
-            _nombreMostrar.value = u.nombreMostrar
-            _usuario.value = u.usuario
+            val id = sesion.ninoIdActivo ?: return@launch
+            val nino = repositorio.obtenerPorId(id) ?: return@launch
+            _nombreMostrar.value = nino.nombreMostrar
         }
     }
 
@@ -51,42 +47,35 @@ class PerfilViewModel(
         _nombreMostrar.value = v
     }
 
-    fun guardarAvatar(uri: Uri?, alExito: () -> Unit) {
+    fun guardarAvatar(emoji: String, alExito: () -> Unit) {
         viewModelScope.launch {
-            val id = sesion.usuarioIdActivo ?: run {
+            val id = sesion.ninoIdActivo ?: run {
                 _mensaje.value = "Sesión no válida"
                 return@launch
             }
-            val s = uri?.toString()
-            val r = repositorio.actualizarAvatarUri(id, s)
+            val r = repositorio.actualizarAvatar(id, emoji)
             r.onSuccess { alExito() }
-                .onFailure { _mensaje.value = it.message ?: "No se pudo guardar la foto" }
+                .onFailure { _mensaje.value = it.message ?: "No se pudo guardar el avatar" }
         }
     }
 
-    fun quitarAvatar(alExito: () -> Unit) {
-        guardarAvatar(null, alExito)
-    }
-
-    fun guardar(nuevaContrasena: String?, alExito: () -> Unit) {
+    fun guardarCambios(alExito: () -> Unit) {
         viewModelScope.launch {
-            val id = sesion.usuarioIdActivo ?: run {
+            val id = sesion.ninoIdActivo ?: run {
                 _mensaje.value = "Sesión no válida"
                 return@launch
             }
-            val r = repositorio.actualizarPerfil(id, _nombreMostrar.value, nuevaContrasena)
+            val r = repositorio.actualizarNombre(id, _nombreMostrar.value)
             r.onSuccess { alExito() }
                 .onFailure { _mensaje.value = it.message ?: "No se pudo guardar" }
         }
     }
 
-    fun eliminarCuenta(alExito: () -> Unit) {
+    fun eliminarPerfilActual(alExito: () -> Unit) {
         viewModelScope.launch {
-            val id = sesion.usuarioIdActivo ?: run {
-                _mensaje.value = "Sesión no válida"
-                return@launch
-            }
-            val r = repositorio.eliminarPerfil(id)
+            val id = sesion.ninoIdActivo ?: return@launch
+            val nino = repositorio.obtenerPorId(id) ?: return@launch
+            val r = repositorio.eliminarNino(nino)
             r.onSuccess { alExito() }
                 .onFailure { _mensaje.value = it.message ?: "No se pudo eliminar" }
         }

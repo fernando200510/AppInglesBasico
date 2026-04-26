@@ -35,11 +35,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,23 +46,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import org.fernandoblanco.inglesbasico.ui.design.PlayScreenGradient
 import org.fernandoblanco.inglesbasico.ui.design.PlaySolidButton
-import org.fernandoblanco.inglesbasico.ui.theme.KidDeep
-import org.fernandoblanco.inglesbasico.ui.theme.KidError
-import org.fernandoblanco.inglesbasico.ui.theme.KidPurple
-import org.fernandoblanco.inglesbasico.ui.theme.KidSky
-import org.fernandoblanco.inglesbasico.ui.theme.KidSuccess
-import org.fernandoblanco.inglesbasico.ui.theme.KidSun
-import org.fernandoblanco.inglesbasico.ui.theme.PlayBlue
-import org.fernandoblanco.inglesbasico.ui.theme.PlayCream
-import org.fernandoblanco.inglesbasico.ui.theme.PlayGreen
-import org.fernandoblanco.inglesbasico.ui.theme.PlayGreenSoft
-import org.fernandoblanco.inglesbasico.ui.theme.PlayInk
-import org.fernandoblanco.inglesbasico.ui.theme.PlayPurple
-import org.fernandoblanco.inglesbasico.ui.theme.PlaySurface
-import org.fernandoblanco.inglesbasico.ui.theme.PlayYellow
+import org.fernandoblanco.inglesbasico.ui.theme.Amarillo
+import org.fernandoblanco.inglesbasico.ui.theme.Azul
+import org.fernandoblanco.inglesbasico.ui.theme.Morado
+import org.fernandoblanco.inglesbasico.ui.theme.Naranja
+import org.fernandoblanco.inglesbasico.ui.theme.Rojo
+import org.fernandoblanco.inglesbasico.ui.theme.Verde
+import org.fernandoblanco.inglesbasico.ui.theme.VerdeSuave
 
 @Composable
 fun KidGameBackground(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
@@ -90,13 +79,13 @@ fun KidSessionProgress(actual: Int, total: Int) {
                 "Pregunta $actual / $total",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = PlayInk
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 "${(animated * 100).toInt()} %",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = PlayPurple
+                color = Naranja
             )
         }
         Spacer(Modifier.height(10.dp))
@@ -107,8 +96,8 @@ fun KidSessionProgress(actual: Int, total: Int) {
                 .height(16.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .shadow(4.dp, RoundedCornerShape(12.dp)),
-            color = PlayBlue,
-            trackColor = PlayGreenSoft,
+            color = Naranja,
+            trackColor = VerdeSuave,
         )
     }
 }
@@ -127,10 +116,9 @@ fun GameFeedbackBlock(
         exit = fadeOut(tween(160)) + shrinkVertically(tween(200))
     ) {
         val t = texto ?: return@AnimatedVisibility
-        val okAnswer = esCorrecto ?: return@AnimatedVisibility
-        val ok = okAnswer == true
-        val borde = if (ok) KidSuccess else KidError
-        val fondo = if (ok) PlayGreen.copy(alpha = 0.14f) else KidError.copy(alpha = 0.1f)
+        val ok = esCorrecto ?: return@AnimatedVisibility
+        val borde = if (ok) Verde else Rojo
+        val fondo = if (ok) Verde.copy(alpha = 0.14f) else Rojo.copy(alpha = 0.1f)
         Card(
             modifier = modifier
                 .fillMaxWidth()
@@ -149,7 +137,7 @@ fun GameFeedbackBlock(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    color = PlayInk,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (!ok && solucionCorrecta != null) {
@@ -157,7 +145,7 @@ fun GameFeedbackBlock(
                         "La correcta es: $solucionCorrecta",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = KidSuccess,
+                        color = Verde,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -180,9 +168,9 @@ fun KidFinSesion(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .shadow(16.dp, RoundedCornerShape(36.dp), spotColor = PlayPurple.copy(0.2f)),
+            .shadow(16.dp, RoundedCornerShape(36.dp), spotColor = Morado.copy(0.2f)),
         shape = RoundedCornerShape(36.dp),
-        colors = CardDefaults.cardColors(containerColor = PlaySurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -195,33 +183,33 @@ fun KidFinSesion(
                 titulo,
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
-                color = PlayPurple,
+                color = Morado,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 "Aciertos: $aciertos de $total",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = PlayInk
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 "$pct %",
                 style = MaterialTheme.typography.displaySmall,
-                color = PlayBlue,
+                color = Naranja,
                 fontWeight = FontWeight.Black
             )
             Spacer(Modifier.height(4.dp))
             PlaySolidButton(
                 text = "Jugar otra vez",
                 onClick = onJugarOtra,
-                containerColor = PlayGreen,
+                containerColor = Verde,
                 heightDp = 56
             )
             PlaySolidButton(
                 text = "Volver al menú",
                 onClick = onSalir,
-                containerColor = PlayYellow,
-                contentColor = PlayInk,
+                containerColor = Amarillo,
+                contentColor = Color(0xFF1A1A2E),
                 heightDp = 52
             )
         }
@@ -234,7 +222,6 @@ fun mensajeFinalSesion(porcentaje: Int): String = when {
     else -> "Sigue practicando"
 }
 
-/** Botón de respuesta: capa única de color, sin “caja blanca”. */
 @Composable
 fun KidOptionButton(
     label: String,
@@ -246,32 +233,20 @@ fun KidOptionButton(
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed && enabled) 0.93f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
         label = "opt"
     )
     val shape = RoundedCornerShape(24.dp)
-    val base = PlayPurple
+    val base = Morado
     Box(
         modifier = modifier
             .height(72.dp)
             .fillMaxWidth()
             .scale(scale)
-            .shadow(
-                10.dp,
-                shape,
-                ambientColor = base.copy(0.22f),
-                spotColor = base.copy(0.32f)
-            )
+            .shadow(10.dp, shape, ambientColor = base.copy(0.22f), spotColor = base.copy(0.32f))
             .clip(shape)
             .background(if (enabled) base else base.copy(alpha = 0.38f))
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                enabled = enabled
-            ) { onClick() }
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled) { onClick() }
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -306,7 +281,7 @@ fun KidListenButton(enabled: Boolean, onClick: () -> Unit) {
         label = "pulseListen"
     )
     val shape = RoundedCornerShape(28.dp)
-    val col = PlayBlue
+    val col = Azul
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -315,11 +290,7 @@ fun KidListenButton(enabled: Boolean, onClick: () -> Unit) {
             .shadow(14.dp, shape, ambientColor = col.copy(0.25f), spotColor = col.copy(0.35f))
             .clip(shape)
             .background(if (enabled) col else col.copy(alpha = 0.45f))
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                enabled = enabled
-            ) { onClick() }
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled) { onClick() }
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -343,14 +314,14 @@ fun GamePlayContentCard(modifier: Modifier = Modifier, content: @Composable () -
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(12.dp, RoundedCornerShape(28.dp), spotColor = PlayBlue.copy(0.12f)),
+            .shadow(12.dp, RoundedCornerShape(28.dp), spotColor = Azul.copy(0.12f)),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = PlaySurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             Modifier
-                .border(1.dp, PlayBlue.copy(alpha = 0.12f), RoundedCornerShape(28.dp))
+                .border(1.dp, Azul.copy(alpha = 0.12f), RoundedCornerShape(28.dp))
                 .padding(22.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {

@@ -4,25 +4,43 @@ import android.content.Context
 
 class SesionUsuario(context: Context) {
 
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val prefs = context.applicationContext
+        .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    var usuarioIdActivo: Long?
+    var padreIdActivo: Long?
         get() {
-            val v = prefs.getLong(KEY_USUARIO_ID, -1L)
+            val v = prefs.getLong(KEY_PADRE_ID, -1L)
             return if (v < 0) null else v
         }
         set(value) {
             prefs.edit().apply {
-                if (value == null) remove(KEY_USUARIO_ID) else putLong(KEY_USUARIO_ID, value)
+                if (value == null) remove(KEY_PADRE_ID) else putLong(KEY_PADRE_ID, value)
             }.apply()
         }
 
-    fun cerrarSesion() {
-        usuarioIdActivo = null
+    var ninoIdActivo: Long?
+        get() {
+            val v = prefs.getLong(KEY_NINO_ID, -1L)
+            return if (v < 0) null else v
+        }
+        set(value) {
+            prefs.edit().apply {
+                if (value == null) remove(KEY_NINO_ID) else putLong(KEY_NINO_ID, value)
+            }.apply()
+        }
+
+    fun cerrarSesionNino() {
+        ninoIdActivo = null
+    }
+
+    fun cerrarSesionCompleta() {
+        padreIdActivo = null
+        ninoIdActivo = null
     }
 
     companion object {
         private const val PREFS = "sesion_ingles_basico"
-        private const val KEY_USUARIO_ID = "usuario_id"
+        private const val KEY_PADRE_ID = "padre_id"
+        private const val KEY_NINO_ID = "nino_id"
     }
 }
