@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import org.fernandoblanco.inglesbasico.data.SesionUsuario
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import org.fernandoblanco.inglesbasico.data.VocabItem
 import org.fernandoblanco.inglesbasico.data.VocabularyBank
+import org.fernandoblanco.inglesbasico.data.SesionUsuario
 
 data class TarjetaVocab(
     val item: VocabItem,
@@ -35,7 +37,13 @@ class ActividadVocabularioViewModel(
     private val _mostrarTrad = MutableStateFlow(false)
     val mostrarTrad: StateFlow<Boolean> = _mostrarTrad.asStateFlow()
 
-    init { reiniciar() }
+    val tarjetaActual: StateFlow<VocabItem?> = combine(_tarjetas, _indice) { list, idx ->
+        list.getOrNull(idx)?.item
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    init {
+        reiniciar()
+    }
 
     fun reiniciar() {
         val items = VocabularyBank.items.shuffled().take(TARJETAS_POR_SESION)
@@ -50,20 +58,12 @@ class ActividadVocabularioViewModel(
     }
 
     fun siguiente() {
-        val idx = _indice.value
-        val lista = _tarjetas.value.toMutableList()
-        if (idx < lista.size) {
-            lista[idx] = lista[idx].copy(vista = true)
-            _tarjetas.value = lista
-        }
-        _mostrarTrad.value = false
-        if (idx >= TARJETAS_POR_SESION - 1) {
+        val currentIdx = _indice.value
+        if (currentIdx >= TARJETAS_POR_SESION - 1) {
             _finSesion.value = true
         } else {
-            _indice.value = idx + 1
+            _mostrarTrad.value = false
+            _indice.value = currentIdx + 1
         }
     }
-
-    val tarjetaActual: VocabItem?
-        get() = _tarjetas.value.getOrNull(_indice.value)?.item
 }

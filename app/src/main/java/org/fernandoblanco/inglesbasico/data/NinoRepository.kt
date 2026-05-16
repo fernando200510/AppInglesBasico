@@ -17,10 +17,15 @@ class NinoRepository(
 
     suspend fun crearNino(nombre: String, emoji: String): Result<Long> {
         val padreId = sesion.padreIdActivo ?: return Result.failure(Exception("No hay sesión activa"))
+        val nombreLimpio = nombre.trim()
+
+        if (dao.existeNombreParaPadre(padreId, nombreLimpio)) {
+            return Result.failure(Exception("Ya tienes un perfil con el nombre '$nombreLimpio'"))
+        }
 
         val nuevoNino = NinoEntity(
             padreId = padreId,
-            nombreMostrar = nombre.trim(),
+            nombreMostrar = nombreLimpio,
             avatarEmoji = emoji
         )
 
@@ -34,7 +39,13 @@ class NinoRepository(
 
     suspend fun actualizarNombre(id: Long, nuevoNombre: String): Result<Unit> {
         val actual = dao.obtenerPorId(id) ?: return Result.failure(Exception("No encontrado"))
-        dao.actualizar(actual.copy(nombreMostrar = nuevoNombre))
+        val nombreLimpio = nuevoNombre.trim()
+
+        if (dao.existeNombreParaPadreExcluyendo(actual.padreId, nombreLimpio, id)) {
+            return Result.failure(Exception("Ya tienes otro perfil con el nombre '$nombreLimpio'"))
+        }
+
+        dao.actualizar(actual.copy(nombreMostrar = nombreLimpio))
         return Result.success(Unit)
     }
 

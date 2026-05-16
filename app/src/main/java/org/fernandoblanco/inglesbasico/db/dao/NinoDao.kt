@@ -32,4 +32,10 @@ interface NinoDao {
 
     @Query("SELECT * FROM ninos WHERE id = :id LIMIT 1")
     fun observarPorId(id: Long): Flow<NinoEntity?>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM ninos WHERE padreId = :padreId AND nombreMostrar = :nombre)")
+    suspend fun existeNombreParaPadre(padreId: Long, nombre: String): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM ninos WHERE padreId = :padreId AND nombreMostrar = :nombre AND id != :excluirId)")
+    suspend fun existeNombreParaPadreExcluyendo(padreId: Long, nombre: String, excluirId: Long): Boolean
 }

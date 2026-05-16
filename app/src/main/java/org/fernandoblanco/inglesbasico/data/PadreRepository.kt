@@ -65,4 +65,7 @@ class PadreRepository(
     }
 
     suspend fun obtenerPorId(id: Long): PadreEntity? = dao.obtenerPorId(id)
+    suspend fun actualizarPadre(padre: PadreEntity) {
+        dao.actualizar(padre)
+    }
 }
