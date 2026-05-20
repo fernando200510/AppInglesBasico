@@ -1,11 +1,19 @@
 package org.fernandoblanco.inglesbasico.data
 
 import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class SesionUsuario(context: Context) {
 
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private val _ninoIdActivoFlow = MutableStateFlow<Long?>(null)
+
+    /** Emite cada vez que cambia el perfil infantil activo (R21 / filtrado por usuario). */
+    val ninoIdActivoFlow: StateFlow<Long?> = _ninoIdActivoFlow.asStateFlow()
 
     @Volatile
     var ninoTiempoActivo: Long? = null
@@ -60,7 +68,12 @@ class SesionUsuario(context: Context) {
             prefs.edit().apply {
                 if (value == null) remove(KEY_NINO_ID) else putLong(KEY_NINO_ID, value)
             }.apply()
+            _ninoIdActivoFlow.value = value
         }
+
+    init {
+        _ninoIdActivoFlow.value = ninoIdActivo
+    }
 
     fun cerrarSesionNino() {
         ninoIdActivo = null

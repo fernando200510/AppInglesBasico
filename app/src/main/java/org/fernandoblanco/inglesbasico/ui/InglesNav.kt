@@ -110,7 +110,6 @@ import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadPalabrasViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ActividadVocabularioViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthPadreViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.NinoPerfilViewModel
-import org.fernandoblanco.inglesbasico.ui.viewmodel.ReportesViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.SelectorPerfilViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.PadrePerfilViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.EditarNinoViewModel
@@ -166,7 +165,9 @@ fun InglesAppRoot() {
         composable(Rutas.ACT_PALABRAS) { PantallaActividadPalabras(factory = factory, nav = nav) }
         composable(Rutas.ACT_VOCABULARIO) { PantallaActividadVocabulario(factory = factory, nav = nav) }
         composable(Rutas.ACT_CHAT) { PantallaActividadChat(factory = factory, nav = nav) }
-        composable(Rutas.REPORTES) { PantallaReportes(factory = factory, nav = nav) }
+        composable(Rutas.REPORTES) {
+            org.fernandoblanco.inglesbasico.ui.reports.PantallaReportes(factory = factory, nav = nav)
+        }
         composable(Rutas.SELECTOR_MASCOTA) { PantallaSelectorMascota(factory = factory, nav = nav) }
         composable(Rutas.SALIR_NINO) { PantallaSalirNino(factory = factory, nav = nav) }
         composable(Rutas.PERFIL_PADRE) {
@@ -1082,71 +1083,6 @@ private fun PantallaActividadChat(factory: InglesViewModelFactory, nav: NavHostC
                         .weight(1f)
                         .verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         ultimoMensaje?.opciones?.forEach { opcion -> KidOptionButton(label = opcion, enabled = !cargando, onClick = { vm.responderOpcion(opcion) }, modifier = Modifier.fillMaxWidth()) }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PantallaReportes(factory: InglesViewModelFactory, nav: NavHostController) {
-    val vm: ReportesViewModel = viewModel(factory = factory)
-    val nino by vm.nino.collectAsState()
-
-    Scaffold(containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(title = { Text("Tus logros", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)))
-        }
-    ) { pad ->
-        PlayScreenGradient(Modifier.fillMaxSize()) {
-            Column(modifier = Modifier
-                .padding(pad)
-                .padding(20.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                if (nino == null) {
-                    Text(
-                        "No hay datos de tu perfil.\nVuelve al inicio o pide a tu papá que elija tu perfil.",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    PlaySolidButton(text = "Volver al inicio", onClick = { nav.popBackStack() }, containerColor = Azul)
-                } else {
-                    val n = nino!!
-                    val mascota = CompaneroData.obtenerPorId(n.mascotaId).emoji
-                    org.fernandoblanco.inglesbasico.ui.kid.KidReportesHeader(n.nombreMostrar, n.avatarEmoji, mascota)
-                    org.fernandoblanco.inglesbasico.ui.kid.KidNivelEstrellas(n.nivel, org.fernandoblanco.inglesbasico.ui.kid.estrellasDeNivel(n.puntajeTotal))
-                    org.fernandoblanco.inglesbasico.ui.kid.KidProgresoBarra(
-                        org.fernandoblanco.inglesbasico.ui.kid.progresoNivel(n.puntajeTotal),
-                        "Tu avance en este nivel"
-                    )
-                    org.fernandoblanco.inglesbasico.ui.kid.KidPuntajeBurbuja(n.puntajeTotal)
-                    val tiempos = org.fernandoblanco.inglesbasico.ui.kid.tiemposVisualizacion(n)
-                    org.fernandoblanco.inglesbasico.ui.kid.KidTiempoUso(tiempos.first, tiempos.second, tiempos.third)
-                    Text("Todas tus actividades", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    BarraJuegoKid("📖 Aprende palabras", n.tarjetasVocabulario, n.sesionesVocabulario.coerceAtLeast(1), Amarillo)
-                    BarraJuegoKid("🖼️ Elegir imagen", n.aciertosImagen, n.partidasImagen, Naranja)
-                    BarraJuegoKid("👂 Audio", n.aciertosAudio, n.partidasAudio, Morado)
-                    BarraJuegoKid("✏️ Completar palabras", n.aciertosPalabras, n.partidasPalabras, Verde)
-                    BarraJuegoKid("🤖 Chat con tutor", n.aciertosChat, n.partidasChat, Azul)
-                    val items = org.fernandoblanco.inglesbasico.ui.kid.historialActividades(n)
-                    if (items.isEmpty()) {
-                        Text(
-                            "Juega las actividades para ver tu historial aquí.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
-                        items.forEach { org.fernandoblanco.inglesbasico.ui.kid.KidHistorialTarjeta(it) }
                     }
                 }
             }
