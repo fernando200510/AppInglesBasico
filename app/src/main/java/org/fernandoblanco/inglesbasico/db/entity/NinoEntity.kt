@@ -34,6 +34,21 @@ data class NinoEntity(
     val rachaActual: Int = 0,
     val rachaMaxima: Int = 0,
     val ultimaActividad: Long = 0L,
-    val tiempoUsoTotalMinutos: Long = 0L,
-    val creadoEn: Long = System.currentTimeMillis()
+    val tiempoUsoTotalSegundos: Long = 0L,
+    val creadoEn: Long = System.currentTimeMillis(),
+    /** R15 — Límite de uso diario en minutos configurado para este perfil. */
+    val limiteUsoDiarioMinutos: Int = 40,
+    /** R13 / R14 — Actividades habilitadas para el perfil. */
+    val actividadImagenHabilitada: Boolean = true,
+    val actividadAudioHabilitada: Boolean = true,
+    val actividadPalabrasHabilitada: Boolean = true,
+    val actividadChatHabilitada: Boolean = true,
+    val actividadVocabularioHabilitada: Boolean = true,
+    val partidasChat: Int = 0,
+    val aciertosChat: Int = 0,
+    val sesionesVocabulario: Int = 0,
+    val tarjetasVocabulario: Int = 0,
+    val segundosUsoHoy: Long = 0L,
+    val segundosSesionActual: Long = 0L,
+    val ultimoDiaUso: Int = 0
 )

@@ -116,12 +116,12 @@ class ActividadChatViewModel(
                 _aciertos.value = _aciertos.value + 1
                 _emocionCompanero.value = EstadoEmocion("🎉", "happy")
                 if (id != null) {
-                    repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.PALABRAS, true)
+                    repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.CHAT, true)
                     repositorio.actualizarRacha(id)
                 }
             } else {
                 _emocionCompanero.value = EstadoEmocion("😢", "sad")
-                if (id != null) repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.PALABRAS, false)
+                if (id != null) repositorio.registrarResultadoActividad(id, NinoRepository.TipoActividad.CHAT, false)
             }
             _turnoActual.value = turnoAntes + 1
             indicePregunta++

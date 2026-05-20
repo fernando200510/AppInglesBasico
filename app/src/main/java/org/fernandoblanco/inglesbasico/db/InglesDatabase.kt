@@ -4,23 +4,29 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import org.fernandoblanco.inglesbasico.db.dao.HistorialDao
 import org.fernandoblanco.inglesbasico.db.dao.NinoDao
 import org.fernandoblanco.inglesbasico.db.dao.PadreDao
+import org.fernandoblanco.inglesbasico.db.dao.UsoDiarioDao
+import org.fernandoblanco.inglesbasico.db.entity.HistorialActividadEntity
 import org.fernandoblanco.inglesbasico.db.entity.NinoEntity
 import org.fernandoblanco.inglesbasico.db.entity.PadreEntity
+import org.fernandoblanco.inglesbasico.db.entity.UsoDiarioEntity
 
 @Database(
-    entities = [PadreEntity::class, NinoEntity::class],
-    version = 2,
+    entities = [PadreEntity::class, NinoEntity::class, HistorialActividadEntity::class, UsoDiarioEntity::class],
+    version = 5,
     exportSchema = false
 )
 abstract class InglesDatabase : RoomDatabase() {
 
     abstract fun padreDao(): PadreDao
     abstract fun ninoDao(): NinoDao
+    abstract fun historialDao(): HistorialDao
+    abstract fun usoDiarioDao(): UsoDiarioDao
 
     companion object {
-        private const val NOMBRE_DB = "ingles_basico_v2.db"
+        private const val NOMBRE_DB = "ingles_basico_v5.db"
 
         @Volatile
         private var instancia: InglesDatabase? = null

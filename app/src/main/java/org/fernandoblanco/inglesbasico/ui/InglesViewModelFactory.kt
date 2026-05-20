@@ -12,6 +12,7 @@ import org.fernandoblanco.inglesbasico.ui.viewmodel.AuthPadreViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.EditarNinoViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.NinoPerfilViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.PadrePerfilViewModel
+import org.fernandoblanco.inglesbasico.ui.viewmodel.ReportesParentalesViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.ReportesViewModel
 import org.fernandoblanco.inglesbasico.ui.viewmodel.SelectorPerfilViewModel
 
@@ -37,6 +38,8 @@ class InglesViewModelFactory(
                 EditarNinoViewModel(repoNino) as T
             modelClass.isAssignableFrom(ReportesViewModel::class.java) ->
                 ReportesViewModel(repoNino, sesion) as T
+            modelClass.isAssignableFrom(ReportesParentalesViewModel::class.java) ->
+                ReportesParentalesViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadImagenViewModel::class.java) ->
                 ActividadImagenViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadAudioViewModel::class.java) ->
@@ -44,7 +47,7 @@ class InglesViewModelFactory(
             modelClass.isAssignableFrom(ActividadPalabrasViewModel::class.java) ->
                 ActividadPalabrasViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadVocabularioViewModel::class.java) ->
-                ActividadVocabularioViewModel(sesion) as T
+                ActividadVocabularioViewModel(repoNino, sesion) as T
             modelClass.isAssignableFrom(ActividadChatViewModel::class.java) ->
                 ActividadChatViewModel(repoNino, sesion) as T
             else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")

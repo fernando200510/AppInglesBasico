@@ -48,8 +48,11 @@ class SelectorPerfilViewModel(
     }
 
     fun seleccionarNino(ninoId: Long, alExito: () -> Unit) {
-        sesion.ninoIdActivo = ninoId
-        alExito()
+        viewModelScope.launch {
+            repoNino.iniciarSesionNino(ninoId)
+            sesion.ninoIdActivo = ninoId
+            alExito()
+        }
     }
 
     fun verificarContrasenaParaSalir(contrasena: String, alExito: () -> Unit) {
@@ -62,6 +65,7 @@ class SelectorPerfilViewModel(
             val ok = repoPadre.verificarContrasena(padreId, contrasena)
             _verificandoPin.value = false
             if (ok) {
+                repoNino.finalizarSesionNino()
                 sesion.ninoIdActivo = null
                 alExito()
             } else {
@@ -71,9 +75,12 @@ class SelectorPerfilViewModel(
     }
 
     fun cerrarSesionCompleta(alExito: () -> Unit) {
-        sesion.padreIdActivo = null
-        sesion.ninoIdActivo = null
-        alExito()
+        viewModelScope.launch {
+            repoNino.finalizarSesionNino()
+            sesion.padreIdActivo = null
+            sesion.ninoIdActivo = null
+            alExito()
+        }
     }
 
     fun crearNino(nombre: String, emoji: String, alExito: () -> Unit) {

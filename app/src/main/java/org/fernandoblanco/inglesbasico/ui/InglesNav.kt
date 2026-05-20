@@ -135,6 +135,7 @@ object Rutas {
     const val SELECTOR_MASCOTA = "selector_mascota"
     const val SALIR_NINO = "salir_nino"
     const val PERFIL_PADRE = "perfil_padre"
+    const val PANEL_REPORTES = "panel_reportes"
     const val EDITAR_NINO = "editar_nino/{ninoId}"
 
     fun editarNino(ninoId: Long) = "editar_nino/$ninoId"
@@ -171,6 +172,9 @@ fun InglesAppRoot() {
         composable(Rutas.PERFIL_PADRE) {
             PantallaPerfilPadre(factory = factory, nav = nav)
         }
+        composable(Rutas.PANEL_REPORTES) {
+            org.fernandoblanco.inglesbasico.ui.parent.PantallaPanelReportesParental(factory = factory, nav = nav)
+        }
         composable(
             route = Rutas.EDITAR_NINO,
             arguments = listOf(navArgument("ninoId") { type = NavType.LongType })
@@ -184,10 +188,23 @@ fun InglesAppRoot() {
 @Composable
 private fun PantallaSplash(app: InglesApp, nav: NavHostController) {
     LaunchedEffect(Unit) {
+        val sesion = app.sesion
+        val repo = app.repositorioNino
+        val padreId = sesion.padreIdActivo
+        if (padreId != null && app.repositorioPadre.obtenerPorId(padreId) == null) {
+            sesion.padreIdActivo = null
+            sesion.ninoIdActivo = null
+        }
+        val ninoId = sesion.ninoIdActivo
+        if (ninoId != null && repo.obtenerPorId(ninoId) == null) {
+            sesion.ninoIdActivo = null
+        } else if (ninoId != null) {
+            repo.reanudarMonitoreoTiempo(ninoId)
+        }
         when {
-            app.sesion.padreIdActivo == null ->
+            sesion.padreIdActivo == null ->
                 nav.navigate(Rutas.LOGIN) { popUpTo(Rutas.SPLASH) { inclusive = true } }
-            app.sesion.ninoIdActivo == null ->
+            sesion.ninoIdActivo == null ->
                 nav.navigate(Rutas.SELECTOR_PERFIL) { popUpTo(Rutas.SPLASH) { inclusive = true } }
             else ->
                 nav.navigate(Rutas.INICIO) { popUpTo(Rutas.SPLASH) { inclusive = true } }
@@ -350,11 +367,19 @@ private fun PantallaSelectorPerfil(factory: InglesViewModelFactory, nav: NavHost
                 Text("¿Quién va a jugar hoy?", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
                 Text("Toca tu nombre para entrar", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(16.dp))
+                PlayOutlineButton(
+                    text = "Panel parental · Reportes",
+                    onClick = { nav.navigate(Rutas.PANEL_REPORTES) },
+                    borderColor = Morado,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                Spacer(Modifier.height(16.dp))
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier
+                        .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -1082,44 +1107,46 @@ private fun PantallaReportes(factory: InglesViewModelFactory, nav: NavHostContro
                 .padding(pad)
                 .padding(20.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                .verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (nino == null) {
-                    Text("No hay datos disponibles.", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text(
+                        "No hay datos de tu perfil.\nVuelve al inicio o pide a tu papá que elija tu perfil.",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    PlaySolidButton(text = "Volver al inicio", onClick = { nav.popBackStack() }, containerColor = Azul)
                 } else {
                     val n = nino!!
-                    val heroShape = RoundedCornerShape(28.dp)
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(22.dp, heroShape, spotColor = Morado.copy(0.3f))
-                        .clip(heroShape)
-                        .background(Brush.horizontalGradient(listOf(Naranja, Rosa)))
-                        .padding(24.dp)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("${n.avatarEmoji} ${n.nombreMostrar}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text("⭐ Nivel ${n.nivel} · ${n.puntajeTotal} puntos", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                            if (n.rachaActual > 0) Text("🔥 Racha: ${n.rachaActual} días (Récord: ${n.rachaMaxima})", style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(0.9f))
-                            val horas = n.tiempoUsoTotalMinutos / 60
-                            val minutos = n.tiempoUsoTotalMinutos % 60
-                            Text("⏱ Tiempo total: ${horas}h ${minutos}min", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(0.85f))
-                        }
-                    }
-                    Text("Rendimiento por juego", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
-                    BarraJuegoKid("🖼️ Imágenes", n.aciertosImagen, n.partidasImagen, Naranja)
+                    val mascota = CompaneroData.obtenerPorId(n.mascotaId).emoji
+                    org.fernandoblanco.inglesbasico.ui.kid.KidReportesHeader(n.nombreMostrar, n.avatarEmoji, mascota)
+                    org.fernandoblanco.inglesbasico.ui.kid.KidNivelEstrellas(n.nivel, org.fernandoblanco.inglesbasico.ui.kid.estrellasDeNivel(n.puntajeTotal))
+                    org.fernandoblanco.inglesbasico.ui.kid.KidProgresoBarra(
+                        org.fernandoblanco.inglesbasico.ui.kid.progresoNivel(n.puntajeTotal),
+                        "Tu avance en este nivel"
+                    )
+                    org.fernandoblanco.inglesbasico.ui.kid.KidPuntajeBurbuja(n.puntajeTotal)
+                    val tiempos = org.fernandoblanco.inglesbasico.ui.kid.tiemposVisualizacion(n)
+                    org.fernandoblanco.inglesbasico.ui.kid.KidTiempoUso(tiempos.first, tiempos.second, tiempos.third)
+                    Text("Todas tus actividades", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    BarraJuegoKid("📖 Aprende palabras", n.tarjetasVocabulario, n.sesionesVocabulario.coerceAtLeast(1), Amarillo)
+                    BarraJuegoKid("🖼️ Elegir imagen", n.aciertosImagen, n.partidasImagen, Naranja)
                     BarraJuegoKid("👂 Audio", n.aciertosAudio, n.partidasAudio, Morado)
-                    BarraJuegoKid("✏️ Palabras", n.aciertosPalabras, n.partidasPalabras, Verde)
-                    val mejoras = areasMejora(n)
-                    val tipShape = RoundedCornerShape(26.dp)
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(16.dp, tipShape, spotColor = Amarillo.copy(0.35f))
-                        .clip(tipShape)
-                        .background(AmarilloSuave)
-                        .padding(20.dp)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text("Consejos para mejorar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = NaranjaOscuro)
-                            if (mejoras.isEmpty()) Text("¡Genial! Sigue jugando los tres modos para subir de nivel.", style = MaterialTheme.typography.bodyLarge, color = NaranjaOscuro.copy(0.8f))
-                            else mejoras.forEach { linea -> Text("• $linea", style = MaterialTheme.typography.bodyLarge, color = NaranjaOscuro.copy(0.8f)) }
-                        }
+                    BarraJuegoKid("✏️ Completar palabras", n.aciertosPalabras, n.partidasPalabras, Verde)
+                    BarraJuegoKid("🤖 Chat con tutor", n.aciertosChat, n.partidasChat, Azul)
+                    val items = org.fernandoblanco.inglesbasico.ui.kid.historialActividades(n)
+                    if (items.isEmpty()) {
+                        Text(
+                            "Juega las actividades para ver tu historial aquí.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        items.forEach { org.fernandoblanco.inglesbasico.ui.kid.KidHistorialTarjeta(it) }
                     }
                 }
             }
@@ -1259,6 +1286,12 @@ private fun PantallaPerfilPadre(factory: InglesViewModelFactory, nav: NavHostCon
                     contentAlignment = Alignment.Center
                 ) { Text("👤", style = MaterialTheme.typography.displaySmall) }
                 Text(padre?.usuario ?: "", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                PlayOutlineButton(
+                    text = "Ver reportes de los niños",
+                    onClick = { nav.navigate(Rutas.PANEL_REPORTES) },
+                    borderColor = Azul
+                )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = nombre,

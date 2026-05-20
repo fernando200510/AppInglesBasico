@@ -36,3 +36,8 @@ val PlayError = Color(0xFFBA1A1A)
 val PlayCream = AmarilloSuave
 val PlayInk = TextoPrincipalClaro
 val PlaySurface = SuperficieClaro
+
+// Nuevos colores para la UI infantil
+val AzulBrillante = Color(0xFF00B0FF)
+val PlayGold = Color(0xFFFFD700)
+val VerdeBrillante = Color(0xFF00E676)

@@ -7,6 +7,39 @@ class SesionUsuario(context: Context) {
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    @Volatile
+    var ninoTiempoActivo: Long? = null
+
+    @Volatile
+    private var ultimoCheckpointMs: Long = 0L
+
+    fun marcarInicioMonitoreo(ninoId: Long) {
+        ninoTiempoActivo = ninoId
+        ultimoCheckpointMs = System.currentTimeMillis()
+    }
+
+    fun reanudarMonitoreo(ninoId: Long) {
+        ninoTiempoActivo = ninoId
+        if (ultimoCheckpointMs == 0L) {
+            ultimoCheckpointMs = System.currentTimeMillis()
+        }
+    }
+
+    fun segundosDesdeCheckpoint(): Long {
+        val inicio = ultimoCheckpointMs
+        if (inicio == 0L) return 0L
+        return ((System.currentTimeMillis() - inicio) / 1000L).coerceAtLeast(0L)
+    }
+
+    fun consumirCheckpoint() {
+        ultimoCheckpointMs = System.currentTimeMillis()
+    }
+
+    fun detenerMonitoreo() {
+        ninoTiempoActivo = null
+        ultimoCheckpointMs = 0L
+    }
+
     var padreIdActivo: Long?
         get() {
             val v = prefs.getLong(KEY_PADRE_ID, -1L)

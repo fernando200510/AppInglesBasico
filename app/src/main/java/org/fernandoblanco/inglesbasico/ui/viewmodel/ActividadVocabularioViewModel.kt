@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import org.fernandoblanco.inglesbasico.data.NinoRepository
 import org.fernandoblanco.inglesbasico.data.VocabItem
 import org.fernandoblanco.inglesbasico.data.VocabularyBank
 import org.fernandoblanco.inglesbasico.data.SesionUsuario
@@ -18,6 +20,7 @@ data class TarjetaVocab(
 )
 
 class ActividadVocabularioViewModel(
+    private val repositorio: NinoRepository,
     private val sesion: SesionUsuario
 ) : ViewModel() {
 
@@ -61,6 +64,12 @@ class ActividadVocabularioViewModel(
         val currentIdx = _indice.value
         if (currentIdx >= TARJETAS_POR_SESION - 1) {
             _finSesion.value = true
+            val ninoId = sesion.ninoIdActivo
+            if (ninoId != null) {
+                viewModelScope.launch {
+                    repositorio.registrarSesionVocabulario(ninoId, TARJETAS_POR_SESION)
+                }
+            }
         } else {
             _mostrarTrad.value = false
             _indice.value = currentIdx + 1

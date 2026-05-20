@@ -10,5 +10,12 @@ class InglesApp : Application() {
     val baseDeDatos by lazy { InglesDatabase.obtener(this) }
     val sesion by lazy { SesionUsuario(this) }
     val repositorioPadre by lazy { PadreRepository(baseDeDatos.padreDao(), sesion) }
-    val repositorioNino by lazy { NinoRepository(baseDeDatos.ninoDao(), sesion) }
+    val repositorioNino by lazy {
+        NinoRepository(
+            baseDeDatos.ninoDao(),
+            baseDeDatos.historialDao(),
+            baseDeDatos.usoDiarioDao(),
+            sesion
+        )
+    }
 }
