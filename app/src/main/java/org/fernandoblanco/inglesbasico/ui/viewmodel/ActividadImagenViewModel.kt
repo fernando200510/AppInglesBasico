@@ -75,7 +75,7 @@ class ActividadImagenViewModel(
             val opcionesEn = VocabularyBank.randomOptions(item, pool, 4)
             val opcionesConTrad = opcionesEn.map { enTexto ->
                 val v = pool.find { it.en == enTexto }
-                if (v != null) "${v.emoji} $enTexto — ${v.es}" else enTexto
+                if (v != null) "$enTexto — ${v.es}" else enTexto
             }
             PreguntaImagen(
                 emoji = item.emoji,
