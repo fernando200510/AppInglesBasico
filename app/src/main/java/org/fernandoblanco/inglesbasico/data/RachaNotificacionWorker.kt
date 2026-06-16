@@ -36,7 +36,7 @@ class RachaNotificacionWorker(
             ninoActivo.rachaActual >= 7 -> "🔥 ¡${ninoActivo.rachaActual} días seguidos! No pierdas tu racha hoy"
             ninoActivo.rachaActual >= 3 -> "⭐ ¡Llevas ${ninoActivo.rachaActual} días! Sigue jugando para mantener tu racha"
             ninoActivo.rachaActual > 0 -> "📚 ¡Hola ${ninoActivo.nombreMostrar}! No olvides practicar inglés hoy"
-            else -> "📚 ¡Hola ${ninoActivo.nombreMostrar}! ¿Jugamos inglés hoy?"
+            else -> "📚 ¡Hola ${ninoActivo.nombreMostrar}! ¿Aprendemos inglés hoy?"
         }
 
         mostrarNotificacion(ninoActivo.nombreMostrar, mensaje)
@@ -67,7 +67,7 @@ class RachaNotificacionWorker(
 
         val notificacion = NotificationCompat.Builder(context, CANAL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("¡Inglés Divertido te espera!")
+            .setContentTitle("Hey, te fuiste hace mucho, es hora de practicar")
             .setContentText(mensaje)
             .setStyle(NotificationCompat.BigTextStyle().bigText(mensaje))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
